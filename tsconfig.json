@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "CommonJS",
+    "removeComments": true,
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": "./libs/nestjs-auth/src",
+    "baseUrl": "./",
+    "paths": {
+      "@wristband/nestjs-auth/nestjs-auth": ["libs/nestjs-auth/src"],
+      "@wristband/nestjs-auth/nestjs-auth/*": ["libs/nestjs-auth/src/*"]
+    },
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "strict": false,
+    "strictBindCallApply": false,
+    "noImplicitAny": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "isolatedModules": true,
+    "incremental": true
+  },
+  "include": ["./libs"],
+  "exclude": ["dist", "node_modules"]
+}
