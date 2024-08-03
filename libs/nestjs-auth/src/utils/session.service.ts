@@ -8,14 +8,14 @@ import { RequestWithSession } from '../types';
 export class SessionService {
   constructor(private wristbandAuth: WristbandAuthService) {}
   private csrfTokens = new Tokens();
-  private sessionCookieAge = this.wristbandAuth.getSessionCookieMaxAge();
-  private secureCookiesEnabled = this.wristbandAuth.getSecureCookiesEnabled();
+  sessionCookieAge = this.wristbandAuth.getSessionCookieMaxAge();
+  secureCookiesEnabled = this.wristbandAuth.getSecureCookiesEnabled();
 
   // Convert the "expiresIn" seconds into an expiration date with the format of milliseconds from the epoch.
   // Adds a 5 minute safety buffer to the token expiration time.
   expiresAtWithBuffer(numOfSeconds: number) {
     const secondsWithBuffer = numOfSeconds - 300;
-    return Date.now().toLocaleString() + secondsWithBuffer * 1000;
+    return Date.now() + secondsWithBuffer * 1000;
   }
 
   createCsrfSecret() {
