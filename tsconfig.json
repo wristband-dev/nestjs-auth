@@ -13,7 +13,7 @@
     },
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "strict": false,
+    "strict": true,
     "strictBindCallApply": false,
     "noImplicitAny": false,
     "esModuleInterop": true,
@@ -23,6 +23,6 @@
     "isolatedModules": true,
     "incremental": true
   },
-  "include": ["./libs"],
+  "include": ["./libs/nestjs-auth/src"],
   "exclude": ["dist", "node_modules"]
 }

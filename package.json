@@ -17,6 +17,16 @@
     "node": ">=18.12.1",
     "npm": ">=8.19.2"
   },
+  "source": "./libs/nestjs-auth/src",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.js",
+  "exports": {
+    "require": "./dist/cjs/index.js",
+    "types": "./dist/types/index.d.ts",
+    "default": "./dist/esm/index.js",
+    "import": "./dist/esm/index.js"
+  },
   "files": [
     "dist",
     "LICENSE.md",
@@ -43,7 +53,11 @@
     "sdk"
   ],
   "scripts": {
-    "build": "nest build nestjs-auth",
+    "build": "npm run build:cjs && npm run build:esm && npm run build:types",
+    "build:cjs": "tsc -p config/tsconfig.cjs.json",
+    "build:esm": "tsc -p config/tsconfig.esm.json",
+    "build:types": "tsc -p config/tsconfig.types.json",
+    "clean": "rm -rf dist",
     "test": "jest",
     "test:coverage": "jest --coverage"
   },
