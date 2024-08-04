@@ -20,7 +20,7 @@ export class CsrfMiddleware implements NestMiddleware {
       return res.status(401).send();
     }
     const cookieName = this.wristbandAuth.getCsrfTokenCookieName();
-    this.sessionService.updateCsrfTokenAndCookie(req, res, cookieName);
+    this.sessionService.updateCsrfTokenAndCookie(req, res, cookieName as unknown as string);
     return next();
   }
 }

@@ -29,7 +29,7 @@ describe('WristbandAuthMiddleware', () => {
         isAuthenticated: false,
         csrfSecret: null,
       },
-    } as RequestWithSession;
+    } as unknown as RequestWithSession;
     const res = {
       status: jest.fn().mockReturnThis(),
       send: jest.fn(),
@@ -49,7 +49,7 @@ describe('WristbandAuthMiddleware', () => {
         isAuthenticated: true,
         csrfSecret: null,
       },
-    } as RequestWithSession;
+    } as unknown as RequestWithSession;
     const res = {
       status: jest.fn().mockReturnThis(),
       send: jest.fn(),

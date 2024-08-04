@@ -28,12 +28,12 @@ export class WristbandAuthMiddleware implements NestMiddleware {
         // Converts the "expiresIn" seconds into a Unix timestamp in milliseconds at which the token expires.
         req.session.expiresAt =
           Date.now() + tokenData.expiresIn * 1000;
-        req.session.refreshToken = tokenData.refreshToken;
+        req.session.refreshToken = tokenData.refreshToken as string;
       }
       // Save the session in order to "touch" it (even if there is no new token data).
       await req.session.save();
       return next();
-    } catch (error) {
+    } catch (error: any) {
       console.error(errorResponse(500, error));
       return res.status(401).send();
     }

@@ -77,7 +77,7 @@ describe('IronSessionMiddleware', () => {
 
     try {
       await middleware.use(req, res, next);
-    } catch (error) {
+    } catch (error: any) {
       expect(error).toBeInstanceOf(Error);
       expect(error.message).toBe('Test error');
     }
