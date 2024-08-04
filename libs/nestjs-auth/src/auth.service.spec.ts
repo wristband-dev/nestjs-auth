@@ -92,4 +92,93 @@ describe('AuthService', () => {
     jest.spyOn(configService, 'get').mockReturnValue('test-login-url');
     expect(service.getLoginUrl()).toBe('test-login-url');
   });
+
+  describe('AuthService getter methods', () => {
+    let service: AuthService;
+    let configService: ConfigService;
+  
+    beforeEach(async () => {
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          AuthService,
+          {
+            provide: ConfigService,
+            useValue: {
+              get: jest.fn(),
+            },
+          },
+        ],
+      }).compile();
+  
+      service = module.get<AuthService>(AuthService);
+      configService = module.get<ConfigService>(ConfigService);
+    });
+  
+    it('should return the correct value for getWristbandApplicationDomain', () => {
+      const mockValue = 'http://example.com';
+      jest.spyOn(configService, 'get').mockReturnValue(mockValue);
+  
+      const result = service.getWristbandApplicationDomain();
+      expect(result).toBe(mockValue);
+      expect(configService.get).toHaveBeenCalledWith('WRISTBAND_APPLICATION_DOMAIN');
+    });
+
+    it('should return the correct value for getPort', () => {
+      const mockValue = '3000';
+      jest.spyOn(configService, 'get').mockReturnValue(mockValue);
+
+      const result = service.getPort();
+      expect(result).toBe(mockValue);
+      expect(configService.get).toHaveBeenCalledWith('PORT');
+    });
+
+    it('should return the correct value for getNodeEnv', () => {
+      const mockValue = 'development';
+      jest.spyOn(configService, 'get').mockReturnValue(mockValue);
+
+      const result = service.getNodeEnv();
+      expect(result).toBe(mockValue);
+      expect(configService.get).toHaveBeenCalledWith('NODE_ENV');
+    });
+
+    it('should return the correct routes for getWristbandAuthRoutes when routes are provided', () => {
+      const mockRoutes = ['route1', 'route2'];
+      const result = service.getWristbandAuthRoutes(mockRoutes);
+      expect(result).toEqual(mockRoutes);
+    });
+
+    it('should return the correct routes for getWristbandAuthRoutes when routes are not provided', () => {
+      const mockValue = 'route1,route2';
+      jest.spyOn(configService, 'get').mockReturnValue(mockValue);
+
+      const result = service.getWristbandAuthRoutes();
+      expect(result).toEqual(['route1', 'route2']);
+      expect(configService.get).toHaveBeenCalledWith('WRISTBAND_AUTH_MIDDLEWARE_ROUTES');
+    });
+
+    it('should return the correct routes for getCsrfMiddlewareRoutes when routes are provided', () => {
+      const mockRoutes = ['route1', 'route2'];
+      const result = service.getCsrfMiddlewareRoutes(mockRoutes);
+      expect(result).toEqual(mockRoutes);
+    });
+
+    it('should return the correct routes for getCsrfMiddlewareRoutes when routes are not provided', () => {
+      const mockValue = 'route1,route2';
+      jest.spyOn(configService, 'get').mockReturnValue(mockValue);
+
+      const result = service.getCsrfMiddlewareRoutes();
+      expect(result).toEqual(['route1', 'route2']);
+      expect(configService.get).toHaveBeenCalledWith('WRISTBAND_CSRF_MIDDLEWARE_ROUTES');
+    });
+
+    it('should return an empty array if an error occurs in getWristbandAuthRoutes', () => {
+      jest.spyOn(configService, 'get').mockImplementation(() => {
+        throw new Error('WRISTBAND_AUTH_MIDDLEWARE_ROUTES not found');
+      });
+
+      const result = service.getWristbandAuthRoutes();
+      expect(result).toEqual([]);
+    });
+  });
 });
+
