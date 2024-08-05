@@ -4,7 +4,7 @@ import { errorResponse } from './utils/server-utils';
 import { SessionService } from './utils/session.service';
 import constants from './constants';
 
-@Controller('api/v1/auth')
+@Controller('auth')
 export class AuthController {
   constructor(
     @Inject(WristbandAuthService)
