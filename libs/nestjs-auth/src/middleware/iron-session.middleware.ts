@@ -22,8 +22,8 @@ export class SessionMiddleware implements NestMiddleware {
   constructor(private readonly wristbandAuth: WristbandAuthService) {}
   use(req: RequestWithSession, res: Response, next: NextFunction) {
     ironSession({
-      cookieName: this.wristbandAuth.getSessionCookieName() || '',
-      password: this.wristbandAuth.getSessionCookieSecret() || '',
+      cookieName: this.wristbandAuth.getSessionCookieName() ?? '',
+      password: this.wristbandAuth.getSessionCookieSecret() ?? '',
       cookieOptions: {
         httpOnly: true,
         maxAge: this.wristbandAuth.getSessionCookieMaxAge(),

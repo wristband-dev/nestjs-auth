@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createWristbandAuth, WristbandAuth } from '@wristband/express-auth';
+import { AuthConfig, createWristbandAuth, WristbandAuth } from '@wristband/express-auth';
 import { SetRoutesForMiddleware, setRoutesForMiddleware } from './utils/routes-utils';
 
 @Injectable()
@@ -150,20 +150,26 @@ export class WristbandAuthService {
     }
   }
 
-  /* Get Wristband returns and instance of WristbandAuth */
-  public getWristbandAuth(): WristbandAuth {
-    return createWristbandAuth({
-      clientId: this.getClientId() || '',
-      clientSecret: this.getClientSecret() || '',
-      dangerouslyDisableSecureCookies: this.getSecureCookiesEnabled(),
-      loginStateSecret: this.getLoginStateCookieSecret() || '',
-      loginUrl: this.getLoginUrl() || '',
-      redirectUri: this.getCallbackUrl() || '',
-      rootDomain: this.getFrontendDomain(),
-      useCustomDomains: this.getUseCustomDomains(),
-      useTenantSubdomains: this.getUseTenantSubdomains(),
-      wristbandApplicationDomain: this.getWristbandApplicationDomain() || '',
-    });
+  /* 
+  * @param config optional configuration object to be passed to createWristbandAuth
+  * @returns WristbandAuth instance
+  */
+  public getWristbandAuth(config?: AuthConfig): WristbandAuth {
+    if (!config) {
+      return createWristbandAuth({
+        clientId: this.getClientId() ?? '',
+        clientSecret: this.getClientSecret() ?? '',
+        dangerouslyDisableSecureCookies: this.getSecureCookiesEnabled(),
+        loginStateSecret: this.getLoginStateCookieSecret() ?? '',
+        loginUrl: this.getLoginUrl() ?? '',
+        redirectUri: this.getCallbackUrl() ?? '',
+        rootDomain: this.getFrontendDomain(),
+        useCustomDomains: this.getUseCustomDomains(),
+        useTenantSubdomains: this.getUseTenantSubdomains(),
+        wristbandApplicationDomain: this.getWristbandApplicationDomain() ?? '',
+      });
+    }
+    return createWristbandAuth(config);
   }
 
   public getRefreshTokenIfExpired(refreshToken: string, expiresAt: number) {
