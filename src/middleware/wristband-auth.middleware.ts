@@ -1,4 +1,5 @@
 import { Inject, Injectable, NestMiddleware } from '@nestjs/common';
+import { TokenData } from '@wristband/express-auth/dist/types';
 import { WristbandAuthService } from '../auth.service';
 import { NextFunction, Response } from 'express';
 import { RequestWithSession } from '../types';
@@ -19,10 +20,10 @@ export class WristbandAuthMiddleware implements NestMiddleware {
     }
 
     try {
-      const tokenData = await this.wristbandAuth.getRefreshTokenIfExpired(
+      const tokenData = await this.wristbandAuth.getRefreshToken(
         refreshToken,
         expiresAt,
-      );
+      ) as unknown as TokenData;
       if (tokenData) {
         req.session.accessToken = tokenData.accessToken;
         // Converts the "expiresIn" seconds into a Unix timestamp in milliseconds at which the token expires.

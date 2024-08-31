@@ -5,11 +5,11 @@
     "removeComments": true,
     "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": "./libs/nestjs-auth/src",
+    "rootDir": "src",
     "baseUrl": "./",
     "paths": {
-      "@wristband/nestjs-auth/nestjs-auth": ["libs/nestjs-auth/src"],
-      "@wristband/nestjs-auth/nestjs-auth/*": ["libs/nestjs-auth/src/*"]
+      "@wristband/nestjs-auth/nestjs-auth": ["src"],
+      "@wristband/nestjs-auth/nestjs-auth/*": ["src/*"]
     },
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -21,8 +21,9 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "isolatedModules": true,
-    "incremental": true
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo"
   },
-  "include": ["./libs/nestjs-auth/src"],
-  "exclude": ["dist", "node_modules"]
+  "include": ["src"],
+  "exclude": ["dist", "node_modules", "config"]
 }

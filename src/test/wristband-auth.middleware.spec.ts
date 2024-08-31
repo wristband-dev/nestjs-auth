@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WristbandAuthMiddleware } from './wristband-auth.middleware';
+import { WristbandAuthMiddleware } from '../middleware/wristband-auth.middleware';
 import { WristbandAuthService } from '../auth.service';
 import { RequestWithSession } from '../types';
 import { Response } from 'express';
@@ -10,7 +10,7 @@ describe('WristbandAuthMiddleware', () => {
 
   beforeEach(async () => {
     wristbandAuthService = {
-      getRefreshTokenIfExpired: jest.fn(),
+      getRefreshToken: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -85,7 +85,7 @@ describe('WristbandAuthMiddleware', () => {
       refreshToken: 'newRefreshToken',
     };
 
-    (wristbandAuthService.getRefreshTokenIfExpired as jest.Mock).mockResolvedValue(tokenData);
+    (wristbandAuthService.getRefreshToken as jest.Mock).mockResolvedValue(tokenData);
 
     await middleware.use(req, res, next);
     expect(req.session.accessToken).toBe(tokenData.accessToken);
@@ -112,7 +112,7 @@ describe('WristbandAuthMiddleware', () => {
     const next = jest.fn();
 
     const error = new Error('Test error');
-    (wristbandAuthService.getRefreshTokenIfExpired as jest.Mock).mockRejectedValue(error);
+    (wristbandAuthService.getRefreshToken as jest.Mock).mockRejectedValue(error);
 
     await middleware.use(req, res, next);
 
