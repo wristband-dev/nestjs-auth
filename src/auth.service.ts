@@ -1,55 +1,56 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { createWristbandAuth } from '@wristband/express-auth';
-import type {AuthConfig, LogoutConfig, WristbandAuth} from '@wristband/express-auth';
 import AUTH_MESSAGES from './constants';
 import { setRoutesForMiddleware, SetRoutesForMiddleware } from './utils/routes-utils';
+import type { AuthConfig, LogoutConfig, WristbandAuth } from '@wristband/express-auth';
 
 const { CONFIGURATION_ERROR } = AUTH_MESSAGES.errors;
 
-export type SessionConfig = {
+type SessionCookiesConfig = {
   sessionCookieName?: string;
   sessionCookieSecret?: string;
   csrfCookieName?: string;
   csrfCookieSecret?: string;
 };
+
+type OptionalConfigs = {
+  signupUrl?: string;
+};
+
+
+export type AuthServiceConfig = AuthConfig & SessionCookiesConfig & OptionalConfigs;
+
 @Injectable()
 export class WristbandAuthService {
+    private wristbandAuth: WristbandAuth;
+    public readonly SESSION_COOKIES_CONFIG: SessionCookiesConfig;
   constructor(
-    private configService: ConfigService,
-    public AUTH_CONFIG: AuthConfig,
-    public SESSION_COOKIES_CONFIG: SessionConfig,
-    public wristbandAuth: WristbandAuth,
-    public SIGNUP_URL: string
+    private config: AuthServiceConfig,
   ) {
-    this.AUTH_CONFIG;
-    this.SESSION_COOKIES_CONFIG;
-    this.wristbandAuth;
-    this.SIGNUP_URL;
+    this.wristbandAuth = this.createAuth(this.config);
+    this.SESSION_COOKIES_CONFIG = {
+      sessionCookieName: this.config.sessionCookieName,
+      csrfCookieName: this.config.csrfCookieName,
+    };
   }
 
-  private getConfigValue(key: string, errorMessage: string): string | undefined {
-    try {
-      return this.configService.get<string>(key);
-    } catch (error) {
-      console.error(errorMessage);
-      return undefined;
-    }
-  }
+  // private getConfigValue(key: string, errorMessage: string): string | undefined {
+  //   try {
+  //     return .prototype.get<string>(key);
+  //   } catch (error) {
+  //     console.error(errorMessage);
+  //     return undefined;
+  //   }
+  // }
 
-  public createAuth(AUTH_CONFIG: AuthConfig) {
+  public createAuth(config: AuthConfig) {
     try {
-      if (AUTH_CONFIG) this.AUTH_CONFIG = AUTH_CONFIG;
-      this.wristbandAuth = createWristbandAuth(AUTH_CONFIG);
+      if (config && Object.keys(config).length > 0) this.wristbandAuth = createWristbandAuth(config);
     } catch (error) {
       console.error(CONFIGURATION_ERROR);
       throw new Error(CONFIGURATION_ERROR);
     }
     return this.wristbandAuth;
-  }
-
-  public setSessionConfig(config) {
-    if (config) this.SESSION_COOKIES_CONFIG = config;
   }
 
   public getAuth() {
@@ -68,21 +69,9 @@ export class WristbandAuthService {
     return this.wristbandAuth.logout(req, res, config);
   }
 
-  public setSignupUrl(url: string = '') {
-    this.SIGNUP_URL = url;
-  }
-
   public getSignupUrl() {
-    return this.SIGNUP_URL;
+    return this.config.signupUrl || '';
   }
-
-  // public getLogin(@Req() req, @Res() res, config?: LoginConfig) {
-  //   return wristbandAuth.login;
-  // }
-
-  // public getLogout(@Req() req, @Res() res, config?: LogoutConfig) {
-  //   return wristbandAuth.logout;
-  // }
 
   public getRefreshToken(refreshToken: string, expiresAt: number) {
     return this.wristbandAuth.refreshTokenIfExpired(refreshToken, expiresAt);
@@ -97,20 +86,20 @@ export class WristbandAuthService {
   //  * to set the routes using a string of comma separated values
   //  * @returns array of routes to be protected by wristband auth middleware
   //  */
-  public getAuthRoutes(routes?: SetRoutesForMiddleware): string[] {
-    try {
-      if (!routes) {
-        const routeList = this.getConfigValue(
-          'WBAUTH__MIDDLEWARE_ROUTES',
-          'WBAUTH__MIDDLEWARE_ROUTES not found. Routes will not be protected.'
-        );
-        return setRoutesForMiddleware(routeList);
-      }
+  // public getAuthRoutes(routes?: SetRoutesForMiddleware): string[] {
+  //   try {
+  //     if (!routes) {
+  //       const routeList = this.getConfigValue(
+  //         'WBAUTH__MIDDLEWARE_ROUTES',
+  //         'WBAUTH__MIDDLEWARE_ROUTES not found. Routes will not be protected.'
+  //       );
+  //       return setRoutesForMiddleware(routeList);
+  //     }
 
-      return setRoutesForMiddleware(routes);
-    } catch (error) {
-      console.error('Error getting Wristband Auth Middleware Routes. Routes will not be protected.');
-      return [];
-    }
-  }
+  //     return setRoutesForMiddleware(routes);
+  //   } catch (error) {
+  //     console.error('Error getting Wristband Auth Middleware Routes. Routes will not be protected.');
+  //     return [];
+  //   }
+  // }
 }

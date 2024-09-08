@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Next, Req, Res } from '@nestjs/common';
-import { CallbackResultType } from '@wristband/express-auth/dist/types';
+import { CallbackResultType } from '@wristband/express-auth';
 import { WristbandAuthService } from './auth.service';
 import { errorResponse } from './utils/server-utils';
 import constants from './constants';
