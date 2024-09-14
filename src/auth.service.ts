@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { createWristbandAuth as makeWristbandAuth } from '@wristband/express-auth';
-import AUTH_MESSAGES from './constants';
 import type { AuthConfig, LogoutConfig, WristbandAuth } from '@wristband/express-auth';
-
-const { CONFIGURATION_ERROR } = AUTH_MESSAGES.errors;
 
 type SessionCookiesConfig = {
   sessionCookieName?: string;
@@ -21,24 +18,19 @@ export type AuthServiceConfig = AuthConfig & SessionCookiesConfig & OptionalConf
 
 @Injectable()
 export class WristbandAuthService {
-    private wristbandAuth: WristbandAuth;
-    public readonly SESSION_COOKIES_CONFIG: SessionCookiesConfig;
+    public wristbandAuth: WristbandAuth;
   constructor(
     private config: AuthServiceConfig,
   ) {
     this.wristbandAuth = this.createWristbandAuth(this.config);
-    this.SESSION_COOKIES_CONFIG = {
-      sessionCookieName: this.config.sessionCookieName,
-      csrfCookieName: this.config.csrfCookieName,
-    };
   }
 
   public createWristbandAuth(config: AuthConfig) {
     try {
       if (config && Object.keys(config).length > 0) this.wristbandAuth = makeWristbandAuth(config);
     } catch (error) {
-      console.error(CONFIGURATION_ERROR);
-      throw new Error(CONFIGURATION_ERROR);
+      console.error(error);
+      throw new Error((error as Error).message);
     }
     return this.wristbandAuth;
   }
