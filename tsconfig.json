@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "CommonJS",
+    "removeComments": true,
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": "src",
+    "baseUrl": "./",
+    "paths": {
+      "@wristband/nestjs-auth/nestjs-auth": ["src"],
+      "@wristband/nestjs-auth/nestjs-auth/*": ["src/*"]
+    },
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "strict": true,
+    "strictBindCallApply": false,
+    "noImplicitAny": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo"
+  },
+  "include": ["src"],
+  "exclude": ["dist", "node_modules", "config", "**/test"]
+}
