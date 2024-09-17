@@ -63,62 +63,187 @@ yarn add @wristband/nestjs-auth
 First, create an instance of services and providers your will need in your NestJS directory structure in any location of your choice (i.e. `src/app.module`). Then, you can export this instance and use it across your project. When creating an instance, you provide all necessary configurations for your application to correlate with how you've set it up in Wristband. 
 
 ```typescript
+// app.module.ts example
 import { ConfigModule } from '@nestjs/config';
 import { env } from 'node:process';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { WristbandModule } from '@wristband/nestjs-auth';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { GovernanceAiController } from './governance-ai/governance-ai.controller';
-import { GovernanceAiService } from './governance-ai/governance-ai.service';
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { RequestTrackingMiddleware } from './middleware/request-tracking.middleware';
 
-import {
-  AuthController,
-  SessionService,
-  SessionMiddleware,
-  WristbandAuthService,
-  WristbandModule,
-} from '@wristband/nestjs-auth';
+import { IronSessionMiddleware } from './middleware/auth/iron-session.middleware';
+import { SessionService } from './middleware/auth/session-service.middleware';
+import { CsrfMiddleware } from './middleware/auth/csrf.middleware';
+import { AuthController } from './auth/auth.controller';
+import { CSRF_TOKEN_COOKIE_NAME, SESSION_COOKIE_NAME } from './utils/constants';
+import { WRISTBAND_AUTH_CONFIGURATION } from './auth/wristband-auth';
 
-export function getEnvFilePath(): string {
-  switch (env.NODE_ENV) {
-    case 'production':
-      return '';
-    case 'preview':
-      return '.env.preview';
-    case 'development':
-    default:
-      return '.env.local';
-  }
-}
+export const SESSION_COOKIE_CONFIGURATION = {
+  dangerouslyDisabledSecureCookies: env.WBAUTH__DISABLE_SECURE_COOKIES || false,
+  sessionCookieName: SESSION_COOKIE_NAME,
+  sessionCookieSecret: env.WBAUTH__SESSION_COOKIE_SECRET,
+  sessionCookieMaxAge: parseInt(env.WBAUTH__SESSION_COOKIE_MAX_AGE, 10) || 1800,
+};
+
+export const CSRF_COOKIE_CONFIGURATION = {
+  csrfCookieName: CSRF_TOKEN_COOKIE_NAME,
+  csrfCookieSecret: env.WBAUTH__SESSION_COOKIE_SECRET,
+};
 
 @Module({
-  imports: [
-    // add the ConfigModule to access .env files
-    ConfigModule.forRoot({
-      isGlobal: true, // Make the ConfigModule global
-      /** 
-      * accepts a function that returns a string value to the 
-      * .env file that is located in the root of your app project
-      */
-      envFilePath: getEnvFilePath(),
+  imports: [WristbandModule.forRoot({
+      ...WRISTBAND_AUTH_CONFIGURATION,
+      ...CSRF_COOKIE_CONFIGURATION,
+      ...SESSION_COOKIE_CONFIGURATION,
     }),
-    WristbandModule,
   ],
-  controllers: [AuthController],
-  providers: [
-    WristbandAuthService,
-    SessionService,
-  ],
+  controllers: [AppController, AuthController],
+  providers: [AppService, SessionService],
 })
 export class AppModule implements NestModule {
+  constructor() {}
+
+  private readonly SESSION_COOKIE_CONFIG = SESSION_COOKIE_CONFIGURATION;
+  public readonly dangerouslyDisableSecureCookies =
+    WRISTBAND_AUTH_CONFIGURATION.dangerouslyDisableSecureCookies;
+
   configure(consumer: MiddlewareConsumer) {
-    // Session Store and application session data
-    consumer.apply(SessionMiddleware).forRoutes('*');
+    // Optional IronSession Middleware
+    consumer.apply(IronSessionMiddleware).forRoutes('*');
+    // Optional CSRF Middleware for Token and Cookie refresh
+    consumer
+      .apply(CsrfMiddleware)
+      .forRoutes("*");
+  }
+
+  getSessionCookieConfig(name: string) {
+    return this.SESSION_COOKIE_CONFIG[name];
   }
 }
 
 ```
+**SDK auth configuration -- eg. wristband-auth.ts**
+```typescript
+// wristband-auth.ts
+import { AuthServiceConfig } from '@wristband/nestjs-auth';
+import { env } from 'node:process';
+
+export const WRISTBAND_AUTH_CONFIGURATION: AuthServiceConfig = {
+  clientId: env.WBAUTH__CLIENT_ID,
+  clientSecret: env.WBAUTH__CLIENT_SECRET,
+  loginStateSecret: env.WBAUTH__LOGIN_STATE_COOKIE_SECRET,
+  loginUrl: env.WBAUTH__LOGIN_URL || 'https://localhost:5173',
+  redirectUri:
+    env.WBAUTH__CALLBACK_URL || 'http://localhost:3002/api/v1/auth/callback',
+  rootDomain: env.WBAUTH__ROOT_DOMAIN || 'localhost:5137',
+  scopes:
+    env.WBAUTH__SCOPES.length > 0
+      ? Array.from(env.WBAUTH__SCOPES.split(','))
+      : ['openid', 'email', 'profile'],
+  useCustomDomains: env.WBAUTH__USE_CUSTOM_DOMAINS === 'true',
+  useTenantSubdomains: env.WBAUTH__USE_TENANT_SUBDOMAINS === 'true',
+  wristbandApplicationDomain:
+    env.WBAUTH__APPLICATION_DOMAIN || 'dashboarddev-perfai.us.wristband.dev',
+};
+```
+**Example Controller for auth -- eg. auth.controller.ts**
+```typescript
+import { Controller, Get, Inject, Next, Req, Res } from '@nestjs/common';
+import { CallbackResultType } from '@wristband/express-auth';
+import { WristbandAuthService } from '@wristband/nestjs-auth';
+import {
+  CSRF_COOKIE_CONFIGURATION,
+  SESSION_COOKIE_CONFIGURATION,
+} from '../app.module';
+
+@Controller('auth')
+export class AuthController {
+  constructor(
+    @Inject(WristbandAuthService)
+    private readonly wristbandAuth: WristbandAuthService,
+  ) {}
+  
+  // Optional Sign-up endpoint
+  @Get('signup')
+  async signup(@Res() res): Promise<void> {
+    res.header('Cache-Control', 'no-store');
+    res.header('Pragma', 'no-cache');
+    return await res.redirect(
+      'https://<your-application-subdomain>.us.wristband.dev/signup',
+    );
+  }
+
+  /** Required Wristband SDK entrypoints */
+  @Get('callback')
+  async callback(@Req() req, @Res() res, @Next() next): Promise<void> {
+    try {
+      const callbackDataResult = await this.wristbandAuth.getCallBack(req, res);
+      const { result, callbackData } = callbackDataResult;
+
+      if (result === CallbackResultType.REDIRECT_REQUIRED) {
+        // The SDK will have already invoked the redirect() function, so we just stop execution here.
+        return;
+      }
+
+      req.session.isAuthenticated = true;
+      req.session.accessToken = callbackData?.accessToken;
+      req.session.expiresAt =
+        Date.now() + (callbackData?.expiresIn ?? 0) * 1000;
+      req.session.refreshToken = callbackData?.refreshToken;
+      req.session.userId = callbackData?.userinfo.sub;
+      req.session.tenantId = callbackData?.userinfo.tnt_id;
+      req.session.identityProviderName = callbackData?.userinfo.idp_name;
+      req.session.tenantDomainName = callbackData?.tenantDomainName;
+      req.session.tenantCustomDomain = callbackData?.tenantCustomDomain;
+
+      await req.session.save();
+      // Send the user back to the application.
+      console.log(
+        `(AUTH CALLBACK) Redirecting to: ${callbackData?.returnUrl}, with data: `,
+        { callbackData, result },
+      );
+      res.redirect(callbackData?.returnUrl || 'http://localhost:5173');
+    } catch (error) {
+      console.error(`(AUTH CALLBACK) Error caused by: `, { error });
+      next(errorResponse(500, UNEXPECTED_ERROR));
+    }
+  }
+
+  @Get('login')
+  async login(@Req() req, @Res() res): Promise<void> {
+    return await this.wristbandAuth.getLogin(req, res);
+  }
+
+// If using Token and session management such as IronSession you can setup a method to revoke the session cookies on the client during logout
+  @Get('logout')
+  async logout(@Req() req, @Res() res, @Next() next): Promise<void> {
+    const { session } = req;
+    const { refreshToken, tenantDomainName } = session;
+    
+    if (Object.keys(SESSION_COOKIE_CONFIGURATION).length > 0) {
+      if (SESSION_COOKIE_CONFIGURATION.sessionCookieName)
+        res.clearCookie(SESSION_COOKIE_CONFIGURATION.sessionCookieName);
+      if (CSRF_COOKIE_CONFIGURATION.csrfCookieName)
+        res.clearCookie(CSRF_COOKIE_CONFIGURATION.csrfCookieName);
+    }
+    
+    session.destroy();
+
+    try {
+      await this.wristbandAuth.getLogout(req, res, {
+        refreshToken,
+        tenantDomainName,
+      });
+    } catch (error) {
+      console.error(`Revoking token during logout failed due ${error}`);
+      next(error);
+    }
+  }
+}
+
+```
+
 
 ### 2) Choose Your Session Storage
 
