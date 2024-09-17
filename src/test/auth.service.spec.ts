@@ -1,5 +1,5 @@
 import { WristbandAuthService } from '../auth.service';
-import type { AuthConfig } from '@wristband/express-auth';
+import type { AuthConfig, WristbandAuth } from '@wristband/express-auth';
 import type { AuthServiceConfig } from '../auth.service';
 
 describe('WristbandAuthService', () => {
@@ -55,7 +55,7 @@ describe('WristbandAuthService', () => {
       const res = {};
       service.wristbandAuth = {
         login: jest.fn(),
-      } as any;
+      } as unknown as WristbandAuth;
       service.getLogin(req, res);
       expect(service.wristbandAuth.login).toHaveBeenCalledWith(req, res);
     });

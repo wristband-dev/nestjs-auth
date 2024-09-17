@@ -5,6 +5,6 @@ export interface RequestWithSession extends Request {
     csrfSecret: string;
     refreshToken: string;
     expiresAt: number;
-    save: Function;
+    save: () => Promise<void>;
   }
 }

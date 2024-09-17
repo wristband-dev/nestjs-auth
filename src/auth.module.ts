@@ -1,7 +1,6 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { AuthServiceConfig, WristbandAuthService } from './auth.service';
 
-
 @Module({
   imports: [],
   controllers: [],
