@@ -86,6 +86,7 @@ export const SESSION_COOKIE_CONFIGURATION = {
   sessionCookieMaxAge: parseInt(env.WBAUTH__SESSION_COOKIE_MAX_AGE, 10) || 1800,
 };
 
+// Optional
 export const CSRF_COOKIE_CONFIGURATION = {
   csrfCookieName: CSRF_TOKEN_COOKIE_NAME,
   csrfCookieSecret: env.WBAUTH__SESSION_COOKIE_SECRET,
@@ -94,6 +95,7 @@ export const CSRF_COOKIE_CONFIGURATION = {
 @Module({
   imports: [WristbandModule.forRoot({
       ...WRISTBAND_AUTH_CONFIGURATION,
+      // Optionally include if using token/session management middleware for your app
       ...CSRF_COOKIE_CONFIGURATION,
       ...SESSION_COOKIE_CONFIGURATION,
     }),
@@ -203,9 +205,11 @@ export class AuthController {
         `(AUTH CALLBACK) Redirecting to: ${callbackData?.returnUrl}, with data: `,
         { callbackData, result },
       );
-      res.redirect(callbackData?.returnUrl || 'http://localhost:5173');
+      // Make sure to have your return route fallback set
+      res.redirect(callbackData?.returnUrl || 'http://<application-fallback-url>');
     } catch (error) {
       console.error(`(AUTH CALLBACK) Error caused by: `, { error });
+      // errorResponse is a generic handler that you can create based on your api requirements
       next(errorResponse(500, UNEXPECTED_ERROR));
     }
   }
