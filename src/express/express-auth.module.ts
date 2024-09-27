@@ -32,6 +32,26 @@ import { AuthConfig } from '../types';
   exports: [WristbandExpressAuthService],
 })
 export class WristbandExpressAuthModule {
+  /**
+   * Configures and initializes the WristbandExpressAuthModule with the provided authentication configuration.
+   *
+   * Example:
+   *
+   * ```typescript
+   * WristbandExpressAuthModule.forRoot({
+   *   clientId: 'your-client-id',
+   *   clientSecret: 'your-client-secret',
+   *   ...
+   * }, 'myWristbandAuth');
+   * ```
+   *
+   * @param {AuthConfig} config - The configuration object for the Wristband SDK, containing authentication details
+   * such as `clientId`, `clientSecret`, and other relevant settings.
+   * @param {string} [token='wristband'] - Optional token name used to identify the service in the module's context.
+   * Defaults to `'wristband'` if not provided, enabling support for multiple instances of the service.
+   * @returns {DynamicModule} - A NestJS DynamicModule that provides and exports the `WristbandExpressAuthService`
+   * and the custom token.
+   */
   static forRoot(config: AuthConfig, token: string = 'wristband'): DynamicModule {
     return {
       module: WristbandExpressAuthModule,
