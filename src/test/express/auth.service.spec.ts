@@ -53,7 +53,7 @@ describe('WristbandExpressAuthService', () => {
     });
   });
 
-  describe('getLogin', () => {
+  describe('login', () => {
     it('should call wristbandAuth.login with req and res', () => {
       const req = {
         params: {},
@@ -69,8 +69,100 @@ describe('WristbandExpressAuthService', () => {
       service.wristbandAuth = {
         login: jest.fn(),
       } as unknown as WristbandAuth;
-      service.getLogin(req, res);
+      service.login(req, res);
       expect(service.wristbandAuth.login).toHaveBeenCalledWith(req, res);
+    });
+
+    it('should call wristbandAuth.login with req, res, and loginConfig', () => {
+      const req = {
+        params: {},
+        query: {},
+        body: {},
+        headers: {},
+      } as Request;
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+        send: jest.fn(),
+      } as unknown as Response;
+      service.wristbandAuth = {
+        login: jest.fn(),
+      } as unknown as WristbandAuth;
+      const loginConfig = { defaultTenantCustomDomain: 'global' };
+      service.login(req, res, loginConfig);
+      expect(service.wristbandAuth.login).toHaveBeenCalledWith(req, res, loginConfig);
+    });
+  });
+
+  describe('callback', () => {
+    it('should call wristbandAuth.callback with req and res', () => {
+      const req = {
+        params: {},
+        query: {},
+        body: {},
+        headers: {},
+      } as Request;
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+        send: jest.fn(),
+      } as unknown as Response;
+      service.wristbandAuth = {
+        callback: jest.fn(),
+      } as unknown as WristbandAuth;
+      service.callback(req, res);
+      expect(service.wristbandAuth.callback).toHaveBeenCalledWith(req, res);
+    });
+  });
+
+  describe('logout', () => {
+    it('should call wristbandAuth.logout with req and res', () => {
+      const req = {
+        params: {},
+        query: {},
+        body: {},
+        headers: {},
+      } as Request;
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+        send: jest.fn(),
+      } as unknown as Response;
+      service.wristbandAuth = {
+        logout: jest.fn(),
+      } as unknown as WristbandAuth;
+      service.logout(req, res);
+      expect(service.wristbandAuth.logout).toHaveBeenCalledWith(req, res);
+    });
+
+    it('should call wristbandAuth.logout with req, res, and logoutConfig', () => {
+      const req = {
+        params: {},
+        query: {},
+        body: {},
+        headers: {},
+      } as Request;
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+        send: jest.fn(),
+      } as unknown as Response;
+      service.wristbandAuth = {
+        logout: jest.fn(),
+      } as unknown as WristbandAuth;
+      const logoutConfig = { tenantDomainName: 'global' };
+      service.logout(req, res, logoutConfig);
+      expect(service.wristbandAuth.logout).toHaveBeenCalledWith(req, res, logoutConfig);
+    });
+  });
+
+  describe('refreshTokenIfExpired', () => {
+    it('should call wristbandAuth.refreshTokenIfExpired with refreshToken and expiresAt', () => {
+      service.wristbandAuth = {
+        refreshTokenIfExpired: jest.fn(),
+      } as unknown as WristbandAuth;
+      service.refreshTokenIfExpired('token', 1234567890);
+      expect(service.wristbandAuth.refreshTokenIfExpired).toHaveBeenCalledWith('token', 1234567890);
     });
   });
 });

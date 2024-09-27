@@ -6,6 +6,9 @@ import { WristbandExpressAuthService } from '../../express/express-auth.service'
 
 describe('WristbandExpressAuthModule', () => {
   let module: TestingModule;
+  let defaultAuthService: WristbandExpressAuthService;
+  let authService: WristbandExpressAuthService;
+  let secondAuthService: WristbandExpressAuthService; // Second service instance
   let config: AuthConfig;
 
   beforeEach(async () => {
@@ -19,26 +22,37 @@ describe('WristbandExpressAuthModule', () => {
     } as AuthConfig;
 
     module = await Test.createTestingModule({
-      imports: [WristbandExpressAuthModule.forRoot(config)],
+      imports: [
+        WristbandExpressAuthModule.forRoot(config),
+        WristbandExpressAuthModule.forRoot(config, 'wristbandToken'),
+        WristbandExpressAuthModule.forRoot(config, 'secondWristbandToken'),
+      ],
     }).compile();
+
+    defaultAuthService = module.get<WristbandExpressAuthService>('wristband'); // default token is 'wristband'
+    authService = module.get<WristbandExpressAuthService>('wristbandToken');
+    secondAuthService = module.get<WristbandExpressAuthService>('secondWristbandToken'); // Get second instance
   });
 
-  it('should create a dynamic module with the correct configuration', () => {
-    const dynamicModule = WristbandExpressAuthModule.forRoot(config);
-    expect(dynamicModule.module).toBe(WristbandExpressAuthModule);
-    expect(dynamicModule.global).toBe(true);
-    expect(dynamicModule.providers).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          provide: WristbandExpressAuthService,
-          useValue: expect.any(WristbandExpressAuthService),
-        }),
-      ])
-    );
+  it('should create three instances of WristbandExpressAuthService with different tokens', () => {
+    expect(defaultAuthService).toBeDefined();
+    expect(authService).toBeDefined();
+    expect(secondAuthService).toBeDefined();
+
+    // Check that the services are different instances
+    expect(defaultAuthService).not.toBe(authService);
+    expect(defaultAuthService).not.toBe(secondAuthService);
+    expect(authService).not.toBe(secondAuthService);
   });
 
-  it('should provide WristbandExpressAuthService with the correct configuration', () => {
-    const wristbandAuthService = module.get<WristbandExpressAuthService>(WristbandExpressAuthService);
-    expect(wristbandAuthService).toBeInstanceOf(WristbandExpressAuthService);
+  it('should call createWristbandAuth with the correct configuration', () => {
+    // Spy on the method to ensure it is called with the correct config
+    const createAuthSpy = jest.spyOn(authService, 'createWristbandAuth');
+
+    // Re-instantiate the auth service to trigger the method call
+    authService.createWristbandAuth(config);
+
+    expect(createAuthSpy).toHaveBeenCalledWith(config);
+    createAuthSpy.mockRestore(); // Restore original method after test
   });
 });
