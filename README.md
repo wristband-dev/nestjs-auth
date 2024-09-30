@@ -332,11 +332,7 @@ export class AuthController {
     session.destroy();
 
     try {
-      return await this.wristbandAuth.logout(req, res, {
-        refreshToken,
-        tenantDomainName,
-        redirectUrl: env.GOVERNANCE_HOME_URL,
-      });
+      return await this.wristbandAuth.logout(req, res, { /* optional logout config */});
     } catch (error) {
       res
         .status(500)
