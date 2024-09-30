@@ -328,8 +328,7 @@ export class AuthController {
     const { session } = req;
     const { refreshToken, tenantDomainName } = session;
 
-    res.clearCookie(SESSION_COOKIE_NAME);
-    res.clearCookie(CSRF_TOKEN_COOKIE_NAME);
+    res.clearCookie('your_session_cookie_name');
     session.destroy();
 
     try {
