@@ -1,8 +1,8 @@
 import type { WristbandAuth } from '@wristband/express-auth';
 import { Request, Response } from 'express';
 
-import type { AuthConfig } from '../../types';
-import { WristbandExpressAuthService } from '../../express/express-auth.service';
+import type { AuthConfig } from '../../src/types';
+import { WristbandExpressAuthService } from '../../src/express/express-auth.service';
 
 describe('WristbandExpressAuthService', () => {
   let service: WristbandExpressAuthService;
@@ -41,15 +41,20 @@ describe('WristbandExpressAuthService', () => {
     });
 
     it('should throw an error with invalid config', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
       const invalidConfig = {
         clientId: '',
         clientSecret: '',
         loginStateSecret: '',
         loginUrl: '',
       } as AuthConfig;
+
       expect(() => {
         return service.createWristbandAuth(invalidConfig);
-      }).toThrow();
+      }).toThrow('The [clientId] config must have a value.');
+
+      consoleSpy.mockRestore();
     });
   });
 
