@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import type { AuthConfig } from '../../types';
-import { WristbandExpressAuthModule } from '../../express/express-auth.module';
-import { WristbandExpressAuthService } from '../../express/express-auth.service';
+import type { AuthConfig } from '../../src/types';
+import { WristbandExpressAuthModule } from '../../src/express/express-auth.module';
+import { WristbandExpressAuthService } from '../../src/express/express-auth.service';
 
 describe('WristbandExpressAuthModule', () => {
   let module: TestingModule;
