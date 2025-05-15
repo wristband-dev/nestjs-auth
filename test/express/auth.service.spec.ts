@@ -15,7 +15,7 @@ describe('WristbandExpressAuthService', () => {
       loginStateSecret: 'Toa903rKynt3YxXKUG7Pvs3ZZPrQVPLi',
       loginUrl: 'http://localhost:3002',
       redirectUri: 'http://localhost:3002',
-      wristbandApplicationDomain: 'http://localhost:3002',
+      wristbandApplicationVanityDomain: 'http://localhost:3002',
     } as AuthConfig;
     service = new WristbandExpressAuthService(config);
     jest.spyOn(service, 'createWristbandAuth');
@@ -34,7 +34,7 @@ describe('WristbandExpressAuthService', () => {
         loginStateSecret: 'Toa903rKynt3YxXKUG7Pvs3ZZPrQVPLi',
         loginUrl: 'http://localhost:3002',
         redirectUri: 'http://localhost:3002',
-        wristbandApplicationDomain: 'http://localhost:3002',
+        wristbandApplicationVanityDomain: 'http://localhost:3002',
       } as AuthConfig;
       service.createWristbandAuth(validConfig);
       expect(service.createWristbandAuth).toHaveBeenCalledWith(validConfig);

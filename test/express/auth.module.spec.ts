@@ -18,7 +18,7 @@ describe('WristbandExpressAuthModule', () => {
       loginStateSecret: 'Toa903rKynt3YxXKUG7Pvs3ZZPrQVPLi',
       loginUrl: 'http://localhost:3002',
       redirectUri: 'http://localhost:3002',
-      wristbandApplicationDomain: 'http://localhost:3002',
+      wristbandApplicationVanityDomain: 'http://localhost:3002',
     } as AuthConfig;
 
     module = await Test.createTestingModule({

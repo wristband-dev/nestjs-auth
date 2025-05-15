@@ -102,7 +102,7 @@ import { HelloWorldModule } from './hello-world/hello-world.module';
       rootDomain: "yourapp.io",
       useCustomDomains: true,
       useTenantSubdomains: true,
-      wristbandApplicationDomain: "auth.yourapp.io",
+      wristbandApplicationVanityDomain: "auth.yourapp.io",
     }),
   ],
 })
@@ -177,8 +177,9 @@ import { IronSessionMiddleware } from './middleware/iron-session.middleware';
 
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // Configure the middleware for your app.
-    consumer.apply(IronSessionMiddleware).forRoutes('*');
+    // Configure the middleware for your app for all routes.
+    // consumer.apply(IronSessionMiddleware).forRoutes('*'); // v10.x
+    consumer.apply(IronSessionMiddleware).forRoutes('{*splat}'); // v11.x
   }
 }
 ```
@@ -216,7 +217,7 @@ export class AuthController {
 }
 ```
 
-#### [Login Endpoint](https://docs.wristband.dev/docs/auth-flows-and-diagrams#login-endpoint)
+#### Login Endpoint
 
 The goal of the Login Endpoint is to initiate an auth request by redircting to the [Wristband Authorization Endpoint](https://docs.wristband.dev/reference/authorizev1). It will store any state tied to the auth request in a Login State Cookie, which will later be used by the Callback Endpoint. The frontend of your application should redirect to this endpoint when users need to log in to your application.
 
@@ -237,15 +238,16 @@ export class AuthController {
   ...
   ...
   
-  // Add the Login Endpoint 
+  // Add the Login Endpoint
   @Get('login')
   async login(@Req() req: Request, @Res() res: Response) {
-    return await this.wristbandAuth.login(req, res, , { /* Optional login configs */ });
+    const authorizeUrl = await this.wristbandAuth.login(req, res, { /* Optional login configs */ });
+    return res.redirect(authorizeUrl);
   }
 }
 ```
 
-#### [Callback Endpoint](https://wristband.stoplight.io/docs/documentation/gw47leh3pqplp-auth-flow-walkthrough#callback-endpoint)
+#### Callback Endpoint
 
 The goal of the Callback Endpoint is to receive incoming calls from Wristband after the user has authenticated and ensure that the Login State cookie contains all auth request state in order to complete the Login Workflow. From there, it will call the [Wristband Token Endpoint](https://wristband.stoplight.io/docs/documentation/4b10b301cb6a2-create-tokens) to fetch necessary JWTs, call the [Wristband Userinfo Endpoint](https://wristband.stoplight.io/docs/documentation/78a780487515f-get-current-user-info) to get the user's data, and create a session for the application containing the JWTs and user data.
 
@@ -270,15 +272,15 @@ export class AuthController {
   async callback(@Req() req: Request, @Res() res: Response) {
     try {
       const callbackResult: CallbackResult = await this.wristbandAuth.callback(req, res);
-      const { result, callbackData } = callbackResult;
+      const { type, callbackData, redirectUrl } = callbackResult;
 
-      if (result === CallbackResultType.REDIRECT_REQUIRED) {
-        // The SDK will have already invoked the redirect() function, so we just stop execution here.
-        return;
+      if (type === CallbackResultType.REDIRECT_REQUIRED) {
+        // The SDK may return a redirectUrl your app should follow for certain edge cases.
+        return res.redirect(redirectUrl);
       }
 
-    // If the SDK does not need to return a redirect response, then we can save any necessary fields for the user's app session into a session cookie.
-    // Store a simple flag to indicate the user has successfully authenticated.
+      // If the SDK does not return a redirectUrl, then we can save any necessary fields for the user's app session into a session cookie.
+      // Store a simple flag to indicate the user has successfully authenticated.
       req.session.isAuthenticated = true;
       req.session.accessToken = callbackData.accessToken;
       // Convert the "expiresIn" seconds into a Unix timestamp in milliseconds at which the token expires.
@@ -302,7 +304,7 @@ export class AuthController {
 }
 ```
 
-#### [Logout Endpoint](https://wristband.stoplight.io/docs/documentation/gw47leh3pqplp-auth-flow-walkthrough#logout-endpoint-1)
+#### Logout Endpoint
 
 The goal of the Logout Endpoint is to destroy the application's session that was established during the Callback Endpoint execution. If refresh tokens were requested during the Login Workflow, then a call to the [Wristband Revoke Token Endpoint](https://wristband.stoplight.io/docs/documentation/1ccf374c99c5b-revoke-token) will occur. It then will redirect to the [Wristband Logout Endpoint](https://wristband.stoplight.io/docs/documentation/ed96d1c4e6a80-logout) in order to destroy the user's authentication session within the Wristband platform. From there, Wristband will send the user to the Tenant-Level Login Page (unless configured otherwise).
 
@@ -332,7 +334,8 @@ export class AuthController {
     session.destroy();
 
     try {
-      return await this.wristbandAuth.logout(req, res, { /* optional logout config */});
+      const logoutUrl = await this.wristbandAuth.logout(req, res, { /* optional logout config */});
+      return res.redirect(logoutUrl);
     } catch (error) {
       res
         .status(500)
@@ -357,7 +360,6 @@ export class AuthModule {}
 ```
 
 There are multiple ways to handle routing in your NestJS application. The most straightforward approach to making the auth routes available to your application is to import the AuthModule directly into your AppModule:
-
 
 ```typescript
 // src/app.module.ts
@@ -471,7 +473,8 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(IronSessionMiddleware).forRoutes('*');
     // Perform auth/session validation and token refresh for non-auth routes.
-    consumer.apply(AuthMiddleware).exclude('/api/v1/auth/(.*)').forRoutes('*');
+    // consumer.apply(AuthMiddleware).exclude('/api/v1/auth/(.*)').forRoutes('*'); // v10.x
+    consumer.apply(AuthMiddleware).exclude('/api/v1/auth/(.*)').forRoutes('{*splat}'); // v11.x
   }
 }
 ```
@@ -521,20 +524,20 @@ export class HelloWorldController {
 
 The NestJS SDK provides functionality to instantiate the Wristband SDK.  It takes an `AuthConfig` type as an argument. For the purpose of this SDK, these are stored as environment variables that should be protected in a key vault for production, or, they can be placed in a `.env` file for development environments.
 
-| AuthConfig Field | Type | Required | Description                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ---------- | ---- | -------- |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| clientId | string | Yes | The ID of the Wristband client.                                                                                                                                                                                                                                                                                                                                                                              |
-| clientSecret | string | Yes | The client's secret.                                                                                                                                                                                                                                                                                                                                                                                         |
-| customApplicationLoginPageUrl | string | No | Custom Application-Level Login Page URL (i.e. Tenant Discovery Page URL). This value only needs to be provided if you are self-hosting the application login page. By default, the SDK will use your Wristband-hosted Application-Level Login page URL. If this value is provided, the SDK will redirect to this URL in certain cases where it cannot resolve a proper Tenant-Level Login URL.               |
-| dangerouslyDisableSecureCookies | boolean | No | USE WITH CAUTION: If set to `true`, the "Secure" attribute will not be included in any cookie settings. This should only be done when testing in local development environments that don't have HTTPS enabed.  If not provided, this value defaults to `false`.                                                                                                                                              |
-| loginStateSecret | string | Yes | A 32 byte (or longer) secret used for encryption and decryption of login state cookies. You can run `openssl rand -base64 32` to create a secret from your CLI.                                                                                                                                                                                                                                              |
-| loginUrl | string | Yes | The URL of your application's login endpoint.  This is the endpoint within your application that redirects to Wristband to initialize the login flow.                                                                                                                                                                                                                                                        |
-| redirectUri | string | Yes | The URI that Wristband will redirect to after authenticating a user.  This should point to your application's callback endpoint.                                                                                                                                                                                                                                                                             |
+| AuthConfig Field | Type | Required | Description |
+| ---------------- | ---- | -------- | ----------- |
+| clientId | string | Yes | The ID of the Wristband client. |
+| clientSecret | string | Yes | The client's secret. |
+| customApplicationLoginPageUrl | string | No | Custom Application-Level Login Page URL (i.e. Tenant Discovery Page URL). This value only needs to be provided if you are self-hosting the application login page. By default, the SDK will use your Wristband-hosted Application-Level Login page URL. If this value is provided, the SDK will redirect to this URL in certain cases where it cannot resolve a proper Tenant-Level Login URL. |
+| dangerouslyDisableSecureCookies | boolean | No | USE WITH CAUTION: If set to `true`, the "Secure" attribute will not be included in any cookie settings. This should only be done when testing in local development environments that don't have HTTPS enabed.  If not provided, this value defaults to `false`. |
+| loginStateSecret | string | Yes | A 32 byte (or longer) secret used for encryption and decryption of login state cookies. You can run `openssl rand -base64 32` to create a secret from your CLI. |
+| loginUrl | string | Yes | The URL of your application's login endpoint.  This is the endpoint within your application that redirects to Wristband to initialize the login flow. |
+| redirectUri | string | Yes | The URI that Wristband will redirect to after authenticating a user.  This should point to your application's callback endpoint. |
 | rootDomain | string | Only if using tenant subdomains | The root domain for your application. This value only needs to be specified if you use tenant subdomains in your login and redirect URLs.  The root domain should be set to the portion of the domain following the tenant subdomain.  For example, if your application uses tenant subdomains such as `tenantA.yourapp.com` and `tenantB.yourapp.com`, then the root domain should be set to `yourapp.com`. |
-| scopes | string[] | No | The scopes required for authentication. Refer to the docs for [currently supported scopes](https://docs.wristband.dev/docs/oauth2-and-openid-connect-oidc#supported-openid-scopes). The default value is `[openid, offline_access, email]`.                                                                                                                                                                  |
-| useCustomDomains | boolean | No | Indicates whether your Wristband application is configured to use custom domains. Defaults to `false`.                                                                                                                                                                                                                                                                                                       |
-| useTenantSubdomains | boolean | No | Indicates whether tenant subdomains are used for your application's authentication endpoints (e.g. login and callback). Defaults to `false`.                                                                                                                                                                                                                                                                 |
-| wristbandApplicationDomain | string | Yes | The vanity domain of the Wristband application.                                                                                                                                                                                                                                                                                                                                                              |
+| scopes | string[] | No | The scopes required for authentication. Refer to the docs for [currently supported scopes](https://docs.wristband.dev/docs/oauth2-and-openid-connect-oidc#supported-openid-scopes). The default value is `[openid, offline_access, email]`. |
+| useCustomDomains | boolean | No | Indicates whether your Wristband application is configured to use custom domains. Defaults to `false`. |
+| useTenantSubdomains | boolean | No | Indicates whether tenant subdomains are used for your application's authentication endpoints (e.g. login and callback). Defaults to `false`. |
+| wristbandApplicationVanityDomain | string | Yes | The vanity domain of the Wristband application. |
 
 ### WristbandExpressAuthModule and WristbandExpressAuthService
 
@@ -548,7 +551,7 @@ WristbandExpressAuthModule.forRoot(
   {
     clientId: 'your-client-id',
     clientSecret: 'your-client-secret',
-    ...the rest of the config...
+    // ...the rest of the config...
   },
   // The optional name for the instance of the WristbandExpressAuthService provided by this module.
   'MyWristbandAuth',
