@@ -232,7 +232,7 @@ export class AppModule implements NestModule {
 Now your application can access the session via the `req.session` object.
 
 
-### 3) Create an Auth Module containing your Wristband Auth Endpoints
+### 4) Create an Auth Module containing your Wristband Auth Endpoints
 
 There are <ins>three core API endpoints</ins> your NestJS server should expose to facilitate both the Login and Logout workflows in Wristband. It is recommended to create a module that contains the routes/controllers for these endpoints.
 
@@ -444,7 +444,7 @@ export class AppModule implements NestModule {
 }
 ```
 
-### 4) Guard Your Non-Auth APIs and Handle Token Refresh
+### 5) Guard Your Non-Auth APIs and Handle Token Refresh
 
 > [!NOTE]
 > There may be applications that do not want to utilize access tokens and/or refresh tokens. If that applies to your application, then you can ignore using the `refreshTokenIfExpired()` functionality.
@@ -531,7 +531,7 @@ export class AppModule implements NestModule {
 You could alternatively leverage [NestJS's Guards](https://docs.nestjs.com/guards#guards) to perform a basic check on the validity of a session, ensuring the user is authenticated before allowing further execution. However, guards should not be responsible for modifying or persisting state, such as refreshing tokens or updating session data -— those responsibilities belong to middleware. The best approach is to use middleware for managing session state (e.g. refreshing tokens or saving updated session data) while using guards to validate the session’s authenticity and access control before allowing requests to proceed. However, if your middleware already handles session validity checks, introducing an auth guard may be redundant, as the middleware itself can ensure that only authenticated requests pass through.
 
 
-### 5) Pass Your Access Token to Downstream APIs
+### 6) Pass Your Access Token to Downstream APIs
 
 > [!NOTE]
 > This is only applicable if you wish to call Wristband's APIs directly or protect your application's other downstream backend APIs.
