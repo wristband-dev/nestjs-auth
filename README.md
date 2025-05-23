@@ -45,10 +45,16 @@ You can learn more about how authentication works in Wristband in our documentat
 
 ---
 
-## Installation
+## Requirements
+
+This SDK is supported for versions NestJS 10 and 11.
 
 > [!WARNING]
 > This SDK currently only supports the Express framework. Reach out to the Wristband team if you are looking for Fastify support.
+
+<br>
+
+## Installation
 
 ```sh
 npm install @wristband/nestjs-auth
@@ -64,17 +70,49 @@ yarn add @wristband/nestjs-auth
 
 The following steps will provide the suggested usage for this SDK, though you can certainly adjust as your project dictates.
 
-### 1) Import the Wristband SDK in your AppModule.
+### 1) Create Wristband Configuration Factory
 
-First, import the `WristbandExpressAuthModule` from the SDK and add it to the list of module imports in your AppModule (i.e. `src/app.module.ts`). In doing so, you will actually create an instance of the Wristband providers to be used globally by any module in your project. You must provide all necessary configurations for your Wristband application that correlates with how you've configured it in the Wristband Dashboard.
+First, register a configuration factory using the SDK's `AuthConfig` in order to define all necessary settings for your Wristband application. This configuration should correlate with how you've configured your application in the Wristband Dashboard. This factory pattern allows for type-safe, environment-based configuration management.
+
+```typescript
+// src/config/wristband-auth.module.ts
+import { AuthConfig } from '@wristband/nestjs-auth';
+import { registerAs } from '@nestjs/config';
+
+// Make sure your config values match what you configured in Wristband.
+export default registerAs(
+  'wristbandAuth',
+  (): AuthConfig => ({
+    clientId: "--your-client-id--",
+    clientSecret: "--your-client-secret--",
+    // NOTE: If deploying your own app to production, do not disable secure cookies.
+    dangerouslyDisableSecureCookies: true,
+    loginStateSecret: 'dummyval-ab7d-4134-9307-2dfcc52f7475',
+    loginUrl: "https://{tenant_domain}.yourapp.io/auth/login",
+    redirectUri: "https://{tenant_domain}.yourapp.io/auth/callback",
+    rootDomain: "yourapp.io",
+    useCustomDomains: true,
+    useTenantSubdomains: true,
+    wristbandApplicationVanityDomain: "auth.yourapp.io",
+  }),
+);
+```
+
+### 2) Import the Wristband SDK in your AppModule.
+
+Next, import the `WristbandExpressAuthModule` from the SDK and add it to the list of module imports in your `AppModule`. Use the `forRootAsync()` method to inject your configuration factory, which will create an instance of the Wristband providers to be used globally by any module in your project.
 
 ```typescript
 // src/app.module.ts
-import { ConfigModule } from '@nestjs/config';
-import { env } from 'node:process';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { WristbandExpressAuthModule } from '@wristband/nestjs-auth';
+import { env } from 'node:process';
 
+// Config
+import { wristbandAuthConfig } from './config/wristband-auth.config';
+
+// Modules
 import { HelloWorldModule } from './hello-world/hello-world.module';
 
 @Module({
@@ -82,28 +120,28 @@ import { HelloWorldModule } from './hello-world/hello-world.module';
     // Add the ConfigModule to access .env files
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [wristbandAuthConfig],
       envFilePath: () => {
         // Provide the env path resolution that is appropriate for your project.
-        return env.NODE_ENV === 'production' ? '' : '.env.local';
+        return env.NODE_ENV === 'production' ? '' : '.env';
       },
+      ignoreEnvFile: env.NODE_ENV === 'production',
     }),
 
     // Add any project-specific modules that contain your core business logic.
     HelloWorldModule,
 
-    // Add the Wristband NestJS Auth SDK with your Wristband configurations.
-    // Configs can live in an external file and source values from your .env.
-    WristbandExpressAuthModule.forRoot({
-      clientId: "ic6saso5hzdvbnof3bwgccejxy",
-      clientSecret: "30e9977124b13037d035be10d727806f",
-      loginStateSecret: '7ffdbecc-ab7d-4134-9307-2dfcc52f7475',
-      loginUrl: "https://{tenant_domain}.yourapp.io/auth/login",
-      redirectUri: "https://{tenant_domain}.yourapp.io/auth/callback",
-      rootDomain: "yourapp.io",
-      useCustomDomains: true,
-      useTenantSubdomains: true,
-      wristbandApplicationVanityDomain: "auth.yourapp.io",
-    }),
+    // Inject the Wristband configurations.
+    WristbandExpressAuthModule.forRootAsync(
+      {
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => {
+          return configService.get('wristbandAuth');
+        },
+        inject: [ConfigService],
+      },
+      'WristbandAuth',
+    ),
   ],
 })
 export class AppModule implements NestModule {
@@ -113,7 +151,7 @@ export class AppModule implements NestModule {
 }
 ```
 
-### 2) Choose Your Session Storage
+### 3) Choose Your Session Storage
 
 This Wristband authentication SDK is unopinionated about how you store and manage your application session data after the user has authenticated. We typically recommend cookie-based sessions due to it being lighter-weight and not requiring a backend session store like Redis or other technologies.  We are big fans of <ins>[Iron Session](https://github.com/vvo/iron-session)</ins> for this reason. Examples below show what it might look like when using such a library to manage your application's session data.
 
@@ -124,8 +162,8 @@ Here's an example of how one might add Iron Session to NestJS. First, create a m
 
 ```typescript
 // src/middleware/iron-session.middleware.ts
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { getIronSession, SessionOptions } from 'iron-session';
 import { NextFunction, Request, Response } from 'express';
 
@@ -139,13 +177,14 @@ const ironSession = (sessionOptions: SessionOptions) => {
 @Injectable()
 export class IronSessionMiddleware implements NestMiddleware {
   constructor(private readonly configService: ConfigService) {
-    // Typically, it's best practice to source the values below from your .env file and inject them into this constructor.
+    // Typically, it's best practice to source the values below from your .env file
+    // and inject them into this constructor.
   }
 
   async use(req: Request, res: Response, next: NextFunction) {
     await ironSession({
       cookieName: 'my-session-cookie-name',
-      password: '983hr8f9rbgu9bfi9ewbefd8ewhf89ew',
+      password: 'my-session-cookie-password',
       cookieOptions: {
         httpOnly: true,
         maxAge: 3600,
@@ -164,12 +203,18 @@ Then, add this middleware to your AppModule:
 
 ```typescript
 // src/app.module.ts
-import { ConfigModule } from '@nestjs/config';
-import { env } from 'node:process';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { WristbandExpressAuthModule } from '@wristband/nestjs-auth';
+import { env } from 'node:process';
 
+// Config
+import { wristbandAuthConfig } from './config/wristband-auth.config';
+
+// Modules
 import { HelloWorldModule } from './hello-world/hello-world.module';
+
+// Middleware
 import { IronSessionMiddleware } from './middleware/iron-session.middleware';
 
 ...
@@ -187,7 +232,7 @@ export class AppModule implements NestModule {
 Now your application can access the session via the `req.session` object.
 
 
-### 3) Create an Auth Module containing your Wristband Auth Endpoints
+### 4) Create an Auth Module containing your Wristband Auth Endpoints
 
 There are <ins>three core API endpoints</ins> your NestJS server should expose to facilitate both the Login and Logout workflows in Wristband. It is recommended to create a module that contains the routes/controllers for these endpoints.
 
@@ -198,18 +243,18 @@ Start by creating an AuthController that has the `WristbandExpressAuthService` i
 ```typescript
 // src/auth/auth.controller.ts
 import { Controller, Get, Inject, Req, Res } from '@nestjs/common';
-import { env } from 'node:process';
 import { Request, Response } from 'express';
 import {
   CallbackResult,
   CallbackResultType,
   WristbandExpressAuthService,
 } from '@wristband/nestjs-auth';
+import { env } from 'node:process';
 
-@Controller('api/v1/auth')
+@Controller('api/auth')
 export class AuthController {
   constructor(
-    @Inject()
+    @Inject('WristbandAuth')
     private readonly wristbandAuth: WristbandExpressAuthService,
   ) {}
   
@@ -233,7 +278,7 @@ import {
   WristbandExpressAuthService,
 } from '@wristband/nestjs-auth';
 
-@Controller('api/v1/auth')
+@Controller('api/auth')
 export class AuthController {
   ...
   ...
@@ -262,7 +307,7 @@ import {
   WristbandExpressAuthService,
 } from '@wristband/nestjs-auth';
 
-@Controller('api/v1/auth')
+@Controller('api/auth')
 export class AuthController {
   ...
   ...
@@ -319,7 +364,7 @@ import {
   WristbandExpressAuthService,
 } from '@wristband/nestjs-auth';
 
-@Controller('api/v1/auth')
+@Controller('api/auth')
 export class AuthController {
   ...
   ...
@@ -363,28 +408,29 @@ There are multiple ways to handle routing in your NestJS application. The most s
 
 ```typescript
 // src/app.module.ts
-import { ConfigModule } from '@nestjs/config';
-import { env } from 'node:process';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { WristbandExpressAuthModule } from '@wristband/nestjs-auth';
+import { env } from 'node:process';
 
-import { HelloWorldModule } from './hello-world/hello-world.module';
-import { IronSessionMiddleware } from './middleware/iron-session.middleware';
+// Config
+import { wristbandAuthConfig } from './config/wristband-auth.config';
+
+// Modules
 import { AuthModule } from './auth/auth.module';
+import { HelloWorldModule } from './hello-world/hello-world.module';
+
+// Middleware
+import { IronSessionMiddleware } from './middleware/iron-session.middleware';
 
 @Module({
   imports: [
-    // Add the ConfigModule to access .env files
     ConfigModule.forRoot({
-	  // .env configs...
+	    // .env configs...
     }),
-
-    // Add any project-specific modules that contain your core business logic.
     HelloWorldModule,
-
-    // Add the Wristband NestJS Auth SDK with your Wristband configurations.
-    WristbandExpressAuthModule.forRoot({
-		// Wristband SDK configs...
+    WristbandExpressAuthModule.forRootAsync({
+		  // Wristband SDK configs...
     }),
     
     // Add the AuthModule for handling the main auth integration endpoints with Wristband.
@@ -398,7 +444,7 @@ export class AppModule implements NestModule {
 }
 ```
 
-### 4) Guard Your Non-Auth APIs and Handle Token Refresh
+### 5) Guard Your Non-Auth APIs and Handle Token Refresh
 
 > [!NOTE]
 > There may be applications that do not want to utilize access tokens and/or refresh tokens. If that applies to your application, then you can ignore using the `refreshTokenIfExpired()` functionality.
@@ -414,7 +460,7 @@ import { WristbandExpressAuthService } from '@wristband/nestjs-auth';
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
   constructor(
-    @Inject(WristbandExpressAuthService)
+    @Inject('WristbandAuth')
     private readonly wristbandAuth: WristbandExpressAuthService,
   ) {}
 
@@ -423,18 +469,14 @@ export class AuthMiddleware implements NestMiddleware {
       return res.status(401).send();
     }
 
-    const { expiresAt, isAuthenticated, refreshToken } =
-      req.session;
+    const { expiresAt, isAuthenticated, refreshToken } = req.session;
 
     if (!isAuthenticated) {
       return res.status(401).send();
     }
 
     try {
-      const tokenData = await this.wristbandAuth.refreshTokenIfExpired(
-        refreshToken,
-        expiresAt,
-      );
+      const tokenData = await this.wristbandAuth.refreshTokenIfExpired(refreshToken, expiresAt);
       if (tokenData) {
         req.session.accessToken = tokenData.accessToken;
         // Converts the "expiresIn" seconds into a Unix timestamp in milliseconds at which the token expires.
@@ -456,25 +498,32 @@ Then, add this middleware to your AppModule, and make sure to exclude any auth e
 
 ```typescript
 // src/app.module.ts
-import { ConfigModule } from '@nestjs/config';
-import { env } from 'node:process';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { WristbandExpressAuthModule } from '@wristband/nestjs-auth';
+import { env } from 'node:process';
 
+// Config
+import { wristbandAuthConfig } from './config/wristband-auth.config';
+
+// Modules
 import { AuthModule } from './auth/auth.module';
 import { HelloWorldModule } from './hello-world/hello-world.module';
-import { IronSessionMiddleware } from './middleware/iron-session.middleware';
+
+// Middleware
 import { AuthMiddleware } from './middleware/auth.middleware';
+import { IronSessionMiddleware } from './middleware/iron-session.middleware';
 
 ...
 ...
 
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(IronSessionMiddleware).forRoutes('*');
+    // consumer.apply(IronSessionMiddleware).forRoutes('*'); // v10.x
+    consumer.apply(IronSessionMiddleware).forRoutes('{*splat}'); // v11.x
     // Perform auth/session validation and token refresh for non-auth routes.
-    // consumer.apply(AuthMiddleware).exclude('/api/v1/auth/(.*)').forRoutes('*'); // v10.x
-    consumer.apply(AuthMiddleware).exclude('/api/v1/auth/(.*)').forRoutes('{*splat}'); // v11.x
+    // consumer.apply(AuthMiddleware).exclude('/api/auth/(.*)').forRoutes('*'); // v10.x
+    consumer.apply(AuthMiddleware).exclude('/api/auth/*path').forRoutes('{*splat}'); // v11.x 
   }
 }
 ```
@@ -482,7 +531,7 @@ export class AppModule implements NestModule {
 You could alternatively leverage [NestJS's Guards](https://docs.nestjs.com/guards#guards) to perform a basic check on the validity of a session, ensuring the user is authenticated before allowing further execution. However, guards should not be responsible for modifying or persisting state, such as refreshing tokens or updating session data -— those responsibilities belong to middleware. The best approach is to use middleware for managing session state (e.g. refreshing tokens or saving updated session data) while using guards to validate the session’s authenticity and access control before allowing requests to proceed. However, if your middleware already handles session validity checks, introducing an auth guard may be redundant, as the middleware itself can ensure that only authenticated requests pass through.
 
 
-### 5) Pass Your Access Token to Downstream APIs
+### 6) Pass Your Access Token to Downstream APIs
 
 > [!NOTE]
 > This is only applicable if you wish to call Wristband's APIs directly or protect your application's other downstream backend APIs.
@@ -541,36 +590,130 @@ The NestJS SDK provides functionality to instantiate the Wristband SDK.  It take
 
 ### WristbandExpressAuthModule and WristbandExpressAuthService
 
-The `WristbandExpressAuthModule` is a dynamic NestJS module that integrates the Wristband Authentication Service for NestJS/Express-based applications. This module is designed to be globally available, ensuring the `WristbandExpressAuthService` can be easily injected and used across different modules in the application.
+The `WristbandExpressAuthModule` is a dynamic NestJS module that integrates the Wristband Authentication Service. This module is designed to be globally available, ensuring the `WristbandExpressAuthService` can be easily injected and used across different modules in the application.
 
-It offers a flexible setup through its `forRoot` method, allowing configuration of the service with custom `AuthConfig` as well as custom names for service injection, ensuring flexibility should multiple instances of the SDK in the same project be a requirement.
+It offers a flexible setup through its `forRootAsync` method, allowing configuration of the service with custom `AuthConfig` as well as custom names for service injection, ensuring flexibility should multiple instances of the SDK in the same project be a requirement.
 
+**Dynamic Configuration with ConfigService**
 ```typescript
-WristbandExpressAuthModule.forRoot(
-  // The AuthConfig expected by the Wristband SDK
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { WristbandExpressAuthModule } from '@wristband/nestjs-auth';
+
+...
+
+WristbandExpressAuthModule.forRootAsync(
   {
-    clientId: 'your-client-id',
-    clientSecret: 'your-client-secret',
-    // ...the rest of the config...
+    imports: [ConfigModule],
+    useFactory: (configService: ConfigService) => ({
+      clientId: configService.get('WRISTBAND_CLIENT_ID'),
+      clientSecret: configService.get('WRISTBAND_CLIENT_SECRET'),
+      loginStateSecret: configService.get('WRISTBAND_LOGIN_STATE_SECRET'),
+      loginUrl: configService.get('WRISTBAND_LOGIN_URL'),
+      redirectUri: configService.get('WRISTBAND_REDIRECT_URI'),
+      wristbandApplicationVanityDomain: configService.get('WRISTBAND_VANITY_DOMAIN'),
+      // ...the rest of the config...
+    }),
+    inject: [ConfigService],
   },
-  // The optional name for the instance of the WristbandExpressAuthService provided by this module.
-  'MyWristbandAuth',
+  // The token name for the instance of the WristbandExpressAuthService provided by this module.
+  'WristbandAuth',
 );
+
+...
 ```
 
-If you make use of the optional name argument when calling `forRoot()`, you can inject the service like the following:
+**Static Configuration**
+```typescript
+import { WristbandExpressAuthModule } from '@wristband/nestjs-auth';
+
+...
+
+WristbandExpressAuthModule.forRootAsync(
+  {
+    useFactory: () => ({
+      clientId: 'your-client-id',
+      clientSecret: 'your-client-secret',
+      loginStateSecret: 'your-login-state-secret',
+      loginUrl: 'https://yourapp.com/api/v1/auth/login',
+      redirectUri: 'https://yourapp.com/api/v1/auth/callback',
+      wristbandApplicationVanityDomain: 'auth.yourapp.com',
+      // ...the rest of the config...
+    }),
+  },
+  // The token name for the instance of the WristbandExpressAuthService provided by this module.
+  'WristbandAuth',
+);
+
+...
+```
+
+**Service Injection**
+
+When you provide a token name when calling `forRootAsync()`, you can inject the service like the following:
 
 ```typescript
-@Controller('api/v1/auth')
+import { Controller, Inject } from '@nestjs/common';
+import { WristbandExpressAuthService } from '@wristband/nestjs-auth';
+
+...
+
+@Controller('api/auth')
 export class AuthController {
   constructor(
-    // Provide custom name to the Inject decorator
-    @Inject('MyWristbandAuth')
+    // Provide the token name to the Inject decorator
+    @Inject('WristbandAuth')
     private readonly wristbandAuth: WristbandExpressAuthService,
   ) {}
   
-  ...
-  ...
+  // ...Methods...
+}
+
+...
+```
+
+**Multi-Instance Setup**
+
+For applications requiring multiple Wristband configurations, you can configure multiple instances:
+
+```typescript
+import { WristbandExpressAuthModule } from '@wristband/nestjs-auth';
+
+@Module({
+  imports: [
+    // Instance 01 configuration
+    WristbandExpressAuthModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => configService.get('wristbandAuth01'),
+      inject: [ConfigService],
+    }, 'WristbandAuth01'),
+    
+    // Instance 02 configuration
+    WristbandExpressAuthModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => configService.get('wristbandAuth02'),
+      inject: [ConfigService],
+    }, 'WristbandAuth02'),
+  ],
+})
+export class AppModule {}
+```
+
+Then inject the specific instances you need:
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { WristbandExpressAuthService } from '@wristband/nestjs-auth';
+
+@Injectable()
+export class HelloWorldService {
+  constructor(
+    @Inject('WristbandAuth01')
+    private readonly wristbandAuth01: WristbandExpressAuthService,
+    @Inject('WristbandAuth02')
+    private readonly wristbandAuth02: WristbandExpressAuthService,
+  ) {}
+  
+  // ...Methods...
 }
 ```
 
