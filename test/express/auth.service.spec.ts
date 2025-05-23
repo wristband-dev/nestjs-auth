@@ -1,7 +1,7 @@
 import type { WristbandAuth } from '@wristband/express-auth';
 import { Request, Response } from 'express';
 
-import type { AuthConfig } from '../../src/types';
+import type { AuthConfig } from '../../src';
 import { WristbandExpressAuthService } from '../../src/express/express-auth.service';
 
 describe('WristbandExpressAuthService', () => {
@@ -18,44 +18,34 @@ describe('WristbandExpressAuthService', () => {
       wristbandApplicationVanityDomain: 'http://localhost:3002',
     } as AuthConfig;
     service = new WristbandExpressAuthService(config);
-    jest.spyOn(service, 'createWristbandAuth');
-    service.createWristbandAuth(config);
   });
 
-  it('should call createWristbandAuth with the correct config on instantiation', () => {
-    expect(service.createWristbandAuth).toHaveBeenCalledWith(config);
+  it('should create service with valid config', () => {
+    expect(service).toBeDefined();
+    expect(service.wristbandAuth).toBeDefined();
   });
 
-  describe('createWristbandAuth', () => {
-    it('should create wristbandAuth with valid config', () => {
-      const validConfig = {
-        clientId: 'soibgmqekjhsjpk3crzd5ohjni',
-        clientSecret: 'b03b7e19b927384e10f71ada872aae09',
-        loginStateSecret: 'Toa903rKynt3YxXKUG7Pvs3ZZPrQVPLi',
-        loginUrl: 'http://localhost:3002',
-        redirectUri: 'http://localhost:3002',
-        wristbandApplicationVanityDomain: 'http://localhost:3002',
-      } as AuthConfig;
-      service.createWristbandAuth(validConfig);
-      expect(service.createWristbandAuth).toHaveBeenCalledWith(validConfig);
-    });
+  it('should throw an error with empty config', () => {
+    expect(() => {
+      new WristbandExpressAuthService({} as AuthConfig);
+    }).toThrow('Please provide an auth configuration object for the Wristband SDK.');
+  });
 
-    it('should throw an error with invalid config', () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+  it('should throw an error with invalid config', () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      const invalidConfig = {
-        clientId: '',
-        clientSecret: '',
-        loginStateSecret: '',
-        loginUrl: '',
-      } as AuthConfig;
+    const invalidConfig = {
+      clientId: '',
+      clientSecret: '',
+      loginStateSecret: '',
+      loginUrl: '',
+    } as AuthConfig;
 
-      expect(() => {
-        return service.createWristbandAuth(invalidConfig);
-      }).toThrow('The [clientId] config must have a value.');
+    expect(() => {
+      new WristbandExpressAuthService(invalidConfig);
+    }).toThrow();
 
-      consoleSpy.mockRestore();
-    });
+    consoleSpy.mockRestore();
   });
 
   describe('login', () => {

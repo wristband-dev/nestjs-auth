@@ -1,9 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { createWristbandAuth as createExpressWristbandAuth } from '@wristband/express-auth';
-import type { WristbandAuth } from '@wristband/express-auth';
+import type { AuthConfig, LoginConfig, LogoutConfig, WristbandAuth } from '@wristband/express-auth';
 import { Request, Response } from 'express';
-
-import { AuthConfig, LoginConfig, LogoutConfig } from '../types';
 
 /**
  * The WristbandExpressAuthService provides methods to interact with the Wristband for NestJS-based applications.
@@ -17,23 +15,21 @@ import { AuthConfig, LoginConfig, LogoutConfig } from '../types';
 export class WristbandExpressAuthService {
   public wristbandAuth: WristbandAuth;
 
-  constructor(@Inject('AUTH_CONFIG') config: AuthConfig) {
+  constructor(config: AuthConfig) {
     this.wristbandAuth = this.createWristbandAuth(config);
   }
 
-  public createWristbandAuth(config: AuthConfig) {
+  private createWristbandAuth(config: AuthConfig): WristbandAuth {
     if (!config || Object.keys(config).length === 0) {
       throw new Error('Please provide an auth configuration object for the Wristband SDK.');
     }
 
     try {
-      this.wristbandAuth = createExpressWristbandAuth({ ...config });
+      return createExpressWristbandAuth({ ...config });
     } catch (error) {
       console.error(error);
       throw new Error((error as Error).message);
     }
-
-    return this.wristbandAuth;
   }
 
   /**
