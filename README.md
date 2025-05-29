@@ -90,9 +90,8 @@ export default registerAs(
     loginStateSecret: 'dummyval-ab7d-4134-9307-2dfcc52f7475',
     loginUrl: "https://{tenant_domain}.yourapp.io/auth/login",
     redirectUri: "https://{tenant_domain}.yourapp.io/auth/callback",
-    rootDomain: "yourapp.io",
-    useCustomDomains: true,
-    useTenantSubdomains: true,
+    parseTenantFromRootDomain: "yourapp.io",
+    isApplicationCustomDomainActive: true,
     wristbandApplicationVanityDomain: "auth.yourapp.io",
   }),
 );
@@ -294,7 +293,7 @@ export class AuthController {
 
 #### Callback Endpoint
 
-The goal of the Callback Endpoint is to receive incoming calls from Wristband after the user has authenticated and ensure that the Login State cookie contains all auth request state in order to complete the Login Workflow. From there, it will call the [Wristband Token Endpoint](https://wristband.stoplight.io/docs/documentation/4b10b301cb6a2-create-tokens) to fetch necessary JWTs, call the [Wristband Userinfo Endpoint](https://wristband.stoplight.io/docs/documentation/78a780487515f-get-current-user-info) to get the user's data, and create a session for the application containing the JWTs and user data.
+The goal of the Callback Endpoint is to receive incoming calls from Wristband after the user has authenticated and ensure that the Login State cookie contains all auth request state in order to complete the Login Workflow. From there, it will call the [Wristband Token Endpoint](https://docs.wristband.dev/reference/tokenv1) to fetch necessary JWTs, call the [Wristband Userinfo Endpoint](https://docs.wristband.dev/reference/userinfov1) to get the user's data, and create a session for the application containing the JWTs and user data.
 
 ```typescript
 // src/auth/auth.controller.ts
@@ -351,7 +350,7 @@ export class AuthController {
 
 #### Logout Endpoint
 
-The goal of the Logout Endpoint is to destroy the application's session that was established during the Callback Endpoint execution. If refresh tokens were requested during the Login Workflow, then a call to the [Wristband Revoke Token Endpoint](https://wristband.stoplight.io/docs/documentation/1ccf374c99c5b-revoke-token) will occur. It then will redirect to the [Wristband Logout Endpoint](https://wristband.stoplight.io/docs/documentation/ed96d1c4e6a80-logout) in order to destroy the user's authentication session within the Wristband platform. From there, Wristband will send the user to the Tenant-Level Login Page (unless configured otherwise).
+The goal of the Logout Endpoint is to destroy the application's session that was established during the Callback Endpoint execution. If refresh tokens were requested during the Login Workflow, then a call to the [Wristband Revoke Token Endpoint](https://docs.wristband.dev/reference/revokev1) will occur. It then will redirect to the [Wristband Logout Endpoint](https://docs.wristband.dev/reference/logoutv1) in order to destroy the user's authentication session within the Wristband platform. From there, Wristband will send the user to the Tenant-Level Login Page (unless configured otherwise).
 
 ```typescript
 // src/auth/auth.controller.ts
@@ -579,13 +578,12 @@ The NestJS SDK provides functionality to instantiate the Wristband SDK.  It take
 | clientSecret | string | Yes | The client's secret. |
 | customApplicationLoginPageUrl | string | No | Custom Application-Level Login Page URL (i.e. Tenant Discovery Page URL). This value only needs to be provided if you are self-hosting the application login page. By default, the SDK will use your Wristband-hosted Application-Level Login page URL. If this value is provided, the SDK will redirect to this URL in certain cases where it cannot resolve a proper Tenant-Level Login URL. |
 | dangerouslyDisableSecureCookies | boolean | No | USE WITH CAUTION: If set to `true`, the "Secure" attribute will not be included in any cookie settings. This should only be done when testing in local development environments that don't have HTTPS enabed.  If not provided, this value defaults to `false`. |
+| isApplicationCustomDomainActive | boolean | No | Indicates whether your Wristband application is configured with an application-level custom domain that is active. This tells the SDK which URL format to use when constructing the Wristband Authorize Endpoint URL. This has no effect on any tenant custom domains passed to your Login Endpoint either via the `tenant_custom_domain` query parameter or via the `defaultTenantCustomDomain` config.  Defaults to `false`. |
 | loginStateSecret | string | Yes | A 32 byte (or longer) secret used for encryption and decryption of login state cookies. You can run `openssl rand -base64 32` to create a secret from your CLI. |
-| loginUrl | string | Yes | The URL of your application's login endpoint.  This is the endpoint within your application that redirects to Wristband to initialize the login flow. |
-| redirectUri | string | Yes | The URI that Wristband will redirect to after authenticating a user.  This should point to your application's callback endpoint. |
-| rootDomain | string | Only if using tenant subdomains | The root domain for your application. This value only needs to be specified if you use tenant subdomains in your login and redirect URLs.  The root domain should be set to the portion of the domain following the tenant subdomain.  For example, if your application uses tenant subdomains such as `tenantA.yourapp.com` and `tenantB.yourapp.com`, then the root domain should be set to `yourapp.com`. |
+| loginUrl | string | Yes | The URL of your application's login endpoint.  This is the endpoint within your application that redirects to Wristband to initialize the login flow. If you intend to use tenant subdomains in your Login Endpoint URL, then this value must contain the `{tenant_domain}` token. For example: `https://{tenant_domain}.yourapp.com/auth/login`. |
+| parseTenantFromRootDomain | string | Only if using tenant subdomains in your application | The root domain for your application. This value only needs to be specified if you intend to use tenant subdomains in your Login and Callback Endpoint URLs.  The root domain should be set to the portion of the domain that comes after the tenant subdomain.  For example, if your application uses tenant subdomains such as `tenantA.yourapp.com` and `tenantB.yourapp.com`, then the root domain should be set to `yourapp.com`. This has no effect on any tenant custom domains passed to your Login Endpoint either via the `tenant_custom_domain` query parameter or via the `defaultTenantCustomDomain` config. When this configuration is enabled, the SDK extracts the tenant subdomain from the host and uses it to construct the Wristband Authorize URL. |
+| redirectUri | string | Yes | The URI that Wristband will redirect to after authenticating a user.  This should point to your application's callback endpoint. If you intend to use tenant subdomains in your Callback Endpoint URL, then this value must contain the `{tenant_domain}` token. For example: `https://{tenant_domain}.yourapp.com/auth/callback`. |
 | scopes | string[] | No | The scopes required for authentication. Refer to the docs for [currently supported scopes](https://docs.wristband.dev/docs/oauth2-and-openid-connect-oidc#supported-openid-scopes). The default value is `[openid, offline_access, email]`. |
-| useCustomDomains | boolean | No | Indicates whether your Wristband application is configured to use custom domains. Defaults to `false`. |
-| useTenantSubdomains | boolean | No | Indicates whether tenant subdomains are used for your application's authentication endpoints (e.g. login and callback). Defaults to `false`. |
 | wristbandApplicationVanityDomain | string | Yes | The vanity domain of the Wristband application. |
 
 ### WristbandExpressAuthModule and WristbandExpressAuthService
