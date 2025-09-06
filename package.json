@@ -2,7 +2,7 @@
   "name": "@wristband/nestjs-auth",
   "description": "SDK for integrating your NestJS application with Wristband. Handles user authentication and token management.",
   "author": "Wristband",
-  "version": "1.0.0-rc11",
+  "version": "1.0.0-rc12",
   "license": "MIT",
   "private": false,
   "homepage": "https://wristband.dev",
@@ -69,7 +69,7 @@
     "test:cov": "jest --coverage --no-cache --runInBand"
   },
   "dependencies": {
-    "@wristband/express-auth": "^4.0.0"
+    "@wristband/express-auth": "^4.1.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^10.0.0 || ^11.0.0",
