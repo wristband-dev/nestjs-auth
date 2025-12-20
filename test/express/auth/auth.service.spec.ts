@@ -1,8 +1,8 @@
 import type { WristbandAuth } from '@wristband/express-auth';
 import { Request, Response } from 'express';
 
-import type { AuthConfig } from '../../src';
-import { WristbandExpressAuthService } from '../../src/express/express-auth.service';
+import type { AuthConfig } from '../../../src';
+import { WristbandExpressAuthService } from '../../../src';
 
 describe('WristbandExpressAuthService', () => {
   let service: WristbandExpressAuthService;
@@ -145,7 +145,7 @@ describe('WristbandExpressAuthService', () => {
       service.wristbandAuth = {
         logout: jest.fn(),
       } as unknown as WristbandAuth;
-      const logoutConfig = { tenantDomainName: 'global' };
+      const logoutConfig = { tenantName: 'global' };
       service.logout(req, res, logoutConfig);
       expect(service.wristbandAuth.logout).toHaveBeenCalledWith(req, res, logoutConfig);
     });
