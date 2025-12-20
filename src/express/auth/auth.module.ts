@@ -1,14 +1,9 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import type { AuthConfig } from '@wristband/express-auth';
-import { WristbandExpressAuthService } from './express-auth.service';
 
-// Define the async options interface
-export interface WristbandAuthAsyncOptions {
-  imports?: any[];
-  // eslint-disable-next-line no-unused-vars
-  useFactory: (..._args: any[]) => Promise<AuthConfig> | AuthConfig;
-  inject?: any[];
-}
+import { WristbandExpressAuthService } from './auth.service';
+import { DEFAULT_AUTH_TOKEN } from '../constants';
+import { WristbandAuthAsyncOptions } from '../types/auth.types';
 
 /**
  * The WristbandExpressAuthModule is a dynamic NestJS module that integrates the Wristband Authentication Service
@@ -52,7 +47,7 @@ export interface WristbandAuthAsyncOptions {
  * ```
  *
  * This module is designed to be globally available, ensuring the `WristbandExpressAuthService` can be easily injected
- * and used across different modules in the application. Multiple instances of this SDK can be innjected into the same
+ * and used across different modules in the application. Multiple instances of this SDK can be injected into the same
  * application, if required.
  */
 @Module({})
@@ -65,7 +60,7 @@ export class WristbandExpressAuthModule {
    * @returns {DynamicModule} - A NestJS DynamicModule that provides and exports the `WristbandExpressAuthService`
    * with the specified token.
    */
-  static forRootAsync(options: WristbandAuthAsyncOptions, token: string): DynamicModule {
+  static forRootAsync(options: WristbandAuthAsyncOptions, token: string = DEFAULT_AUTH_TOKEN): DynamicModule {
     // Create a unique config token for this instance
     const configToken = `${token}_CONFIG`;
 

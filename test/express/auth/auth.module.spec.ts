@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import type { AuthConfig } from '../../src';
-import { WristbandExpressAuthModule } from '../../src/express/express-auth.module';
-import { WristbandExpressAuthService } from '../../src/express/express-auth.service';
+import type { AuthConfig } from '../../../src';
+import { WristbandExpressAuthModule, WristbandExpressAuthService } from '../../../src';
+import { DEFAULT_AUTH_TOKEN } from '../../../src/express/constants';
 
 describe('WristbandExpressAuthModule', () => {
   let module: TestingModule;
@@ -64,5 +64,20 @@ describe('WristbandExpressAuthModule', () => {
     expect(firstAuthService.wristbandAuth).not.toBe(secondAuthService.wristbandAuth);
     expect(firstAuthService.wristbandAuth).not.toBe(thirdAuthService.wristbandAuth);
     expect(secondAuthService.wristbandAuth).not.toBe(thirdAuthService.wristbandAuth);
+  });
+
+  it('should use default token when no token provided', async () => {
+    const defaultModule = await Test.createTestingModule({
+      imports: [
+        WristbandExpressAuthModule.forRootAsync({
+          useFactory: () => config,
+        }), // No token provided, should use DEFAULT_AUTH_TOKEN
+      ],
+    }).compile();
+
+    const defaultService = defaultModule.get<WristbandExpressAuthService>(DEFAULT_AUTH_TOKEN);
+    expect(defaultService).toBeDefined();
+    
+    await defaultModule.close();
   });
 });

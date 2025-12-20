@@ -1,14 +1,25 @@
-import {
+// express-auth SDK re-exports
+export type {
   AuthConfig,
+  AuthStrategy,
   CallbackData,
   CallbackResult,
   CallbackResultType,
   LoginConfig,
   LogoutConfig,
+  SameSiteOption,
+  Session,
+  SessionData,
+  SessionOptions,
+  SessionResponse,
   TokenData,
+  TokenResponse,
+  UserInfo,
+  UserInfoRole,
 } from '@wristband/express-auth';
+export { WristbandError } from '@wristband/express-auth';
 
-export { WristbandExpressAuthModule } from './express/express-auth.module';
-export { WristbandExpressAuthService } from './express/express-auth.service';
-export type { AuthConfig, CallbackData, CallbackResult, LoginConfig, LogoutConfig, TokenData };
-export { CallbackResultType };
+// nestjs-auth SDK exports
+export { WristbandExpressAuthModule, WristbandExpressAuthService, createWristbandAuthGuard } from './express';
+
+export type { AuthGuardConfig } from './express';
