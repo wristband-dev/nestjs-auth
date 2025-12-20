@@ -1175,10 +1175,15 @@ These fields are automatically populated when you call `req.session.fromCallback
 #### Extending SessionData
 
 Add custom fields with TypeScript declaration merging:
+
 ```typescript
-// src/types/session-data.ts
+// src/types/session-data.d.ts
 import '@wristband/typescript-session';
 
+/**
+ * Augment SessionData with custom application-specific fields.
+ * All custom fields should be optional since they may not be present in all session states.
+ */
 declare module '@wristband/typescript-session' {
   interface SessionData {
     theme?: string;
@@ -1188,6 +1193,7 @@ declare module '@wristband/typescript-session' {
 ```
 
 Then use with full type safety:
+
 ```typescript
 @Post('settings')
 @UseGuards(WristbandAuthGuard)
@@ -1525,16 +1531,44 @@ export const authGuardConfig = registerAs('wristbandAuthGuard', (): AuthGuardCon
 
 **TypeScript Support:**
 
-Enable `req.auth` typing:
-```typescript
-import '@wristband/express-auth/jwt';
+To enable type-safe access to `req.auth` without optional chaining, import the JWT type augmentation in your Wristband configuration file:
 
+```typescript
+// src/config/wristband.config.ts
+
+import { registerAs } from '@nestjs/config';
+import type { AuthConfig, AuthGuardConfig } from '@wristband/nestjs-auth';
+
+// This import augments the Express Request type with req.auth typing
+import '@wristband/nestjs-auth/jwt';
+
+export const authConfig = registerAs('wristbandAuth', (): AuthConfig => ({
+  clientId: process.env.CLIENT_ID!,
+  clientSecret: process.env.CLIENT_SECRET!,
+  wristbandApplicationVanityDomain: process.env.APPLICATION_VANITY_DOMAIN!,
+}));
+
+export const authGuardConfig = registerAs('wristbandAuthGuard', (): AuthGuardConfig => ({
+  authStrategies: ['JWT'],
+  jwtConfig: {
+    jwksCacheMaxSize: 50,
+  },
+}));
+```
+
+Once imported, `req.auth` is fully typed in your controllers:
+
+```typescript
 @Get('data')
 @UseGuards(WristbandAuthGuard)
 getData(@Req() req: Request) {
-  const userId = req.auth.sub;  // ✅ No optional chaining needed
+  const userId = req.auth.sub;      // ✅ Fully typed, no optional chaining needed
+  const bearerToken = req.auth.jwt; // ✅ Fully typed
+  return { userId };
 }
 ```
+
+Without the import, you'd need optional chaining (e.g., `req.auth?.sub`).
 
 #### Strategy Order
 
