@@ -17,6 +17,7 @@ export type {
   UserInfo,
   UserInfoRole,
 } from '@wristband/express-auth';
+export { WristbandError } from '@wristband/express-auth';
 
 // nestjs-auth SDK exports
 export { WristbandExpressAuthModule, WristbandExpressAuthService, createWristbandAuthGuard } from './express';
