@@ -1066,10 +1066,10 @@ WristbandExpressAuthModule.forRootAsync(
 
 This SDK uses the [Wristband express-auth SDK](https://github.com/wristband-dev/express-auth) internally for all Express support. The following auth methods are available via the `WristbandExpressAuthService`. For detailed documentation on parameters, return types, and behavior, refer to the express-auth Auth API documentation:
 
-- <ins>[login()](https://github.com/wristband-dev/express-auth?tab=readme-ov-file#loginreq-request-res-response-config-loginconfig-promisevoid)</ins>
-- <ins>[callback()](https://github.com/wristband-dev/express-auth?tab=readme-ov-file#callbackreq-request-res-response-promisecallbackresult)</ins>
-- <ins>[logout()](https://github.com/wristband-dev/express-auth?tab=readme-ov-file#logoutreq-request-res-response-config-logoutconfig-promisevoid)</ins>
-- <ins>[refreshTokenIfExpired()](https://github.com/wristband-dev/express-auth?tab=readme-ov-file#refreshtokenifexpiredrefreshtoken-string-expiresat-number-promisetokendata--null)</ins>
+- <ins>[login()](https://github.com/wristband-dev/express-auth?tab=readme-ov-file#login)</ins>
+- <ins>[callback()](https://github.com/wristband-dev/express-auth?tab=readme-ov-file#callback)</ins>
+- <ins>[logout()](https://github.com/wristband-dev/express-auth?tab=readme-ov-file#logout)</ins>
+- <ins>[refreshTokenIfExpired()](https://github.com/wristband-dev/express-auth?tab=readme-ov-file#refreshtokenifexpired)</ins>
 
 <br>
 

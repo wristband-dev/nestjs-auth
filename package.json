@@ -2,7 +2,7 @@
   "name": "@wristband/nestjs-auth",
   "description": "SDK for integrating your NestJS application with Wristband. Handles user authentication, session management, and token management.",
   "author": "Wristband",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "license": "MIT",
   "private": false,
   "homepage": "https://wristband.dev",
@@ -93,7 +93,7 @@
     "test:coverage": "jest --coverage --no-cache --runInBand"
   },
   "dependencies": {
-    "@wristband/express-auth": "^6.0.1"
+    "@wristband/express-auth": "^6.1.0"
   },
   "peerDependencies": {
     "@nestjs/common": ">=10.0.0",
@@ -101,16 +101,14 @@
     "@nestjs/core": ">=10.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.10.0",
-    "@nestjs/cli": "^11.0.14",
-    "@nestjs/schematics": "^11.0.9",
-    "@nestjs/testing": "^11.1.9",
+    "@eslint/js": "^9.39.4",
+    "@nestjs/testing": "^11.1.17",
     "@types/express": "^5.0.6",
     "@types/jest": "^29.5.13",
     "@types/node": "^22.5.5",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
-    "eslint": "^9.16.0",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-prettier": "^5.2.1",
     "globals": "^15.9.0",
     "husky": "^9.1.6",
