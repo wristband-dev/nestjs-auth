@@ -1,7 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, UnauthorizedException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import {
+  ExecutionContext,
+  UnauthorizedException,
+  ForbiddenException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 import { createWristbandAuthGuard } from '../../../src/express/guards/auth.guard';
 import { WristbandExpressAuthService } from '../../../src/express/auth/auth.service';
@@ -50,7 +55,7 @@ describe('createWristbandAuthGuard', () => {
   describe('Guard Creation - All Permutations', () => {
     it('should create guard with default configKey and default authToken', async () => {
       const Guard = createWristbandAuthGuard();
-      
+
       const module = await Test.createTestingModule({
         providers: [
           Guard,
@@ -65,7 +70,7 @@ describe('createWristbandAuthGuard', () => {
 
     it('should create guard with custom configKey and default authToken', async () => {
       const Guard = createWristbandAuthGuard('customConfig');
-      
+
       const module = await Test.createTestingModule({
         providers: [
           Guard,
@@ -81,7 +86,7 @@ describe('createWristbandAuthGuard', () => {
     it('should create guard with default configKey and custom authToken', async () => {
       const customToken = 'CUSTOM_AUTH_TOKEN';
       const Guard = createWristbandAuthGuard(undefined, customToken);
-      
+
       const module = await Test.createTestingModule({
         providers: [
           Guard,
@@ -97,7 +102,7 @@ describe('createWristbandAuthGuard', () => {
     it('should create guard with custom configKey and custom authToken', async () => {
       const customToken = 'CUSTOM_AUTH_TOKEN';
       const Guard = createWristbandAuthGuard('customConfig', customToken);
-      
+
       const module = await Test.createTestingModule({
         providers: [
           Guard,
@@ -120,7 +125,7 @@ describe('createWristbandAuthGuard', () => {
   describe('Configuration Validation', () => {
     it('should throw error if auth service is not found', async () => {
       const Guard = createWristbandAuthGuard();
-      
+
       await expect(
         Test.createTestingModule({
           providers: [
@@ -135,7 +140,7 @@ describe('createWristbandAuthGuard', () => {
     it('should throw error if guard config is not found', async () => {
       mockConfigService.get.mockReturnValue(undefined);
       const Guard = createWristbandAuthGuard();
-      
+
       await expect(
         Test.createTestingModule({
           providers: [
@@ -150,7 +155,7 @@ describe('createWristbandAuthGuard', () => {
     it('should throw error if no auth strategies provided', async () => {
       mockConfigService.get.mockReturnValue({ authStrategies: [] });
       const Guard = createWristbandAuthGuard();
-      
+
       await expect(
         Test.createTestingModule({
           providers: [
@@ -167,7 +172,7 @@ describe('createWristbandAuthGuard', () => {
         authStrategies: ['SESSION'],
       });
       const Guard = createWristbandAuthGuard();
-      
+
       await expect(
         Test.createTestingModule({
           providers: [
@@ -187,7 +192,7 @@ describe('createWristbandAuthGuard', () => {
         },
       });
       const Guard = createWristbandAuthGuard();
-      
+
       await expect(
         Test.createTestingModule({
           providers: [
@@ -204,7 +209,7 @@ describe('createWristbandAuthGuard', () => {
         authStrategies: ['JWT'],
       });
       const Guard = createWristbandAuthGuard();
-      
+
       const module = await Test.createTestingModule({
         providers: [
           Guard,
@@ -219,7 +224,7 @@ describe('createWristbandAuthGuard', () => {
 
     it('should call createAuthMiddleware with guard config', async () => {
       const Guard = createWristbandAuthGuard();
-      
+
       const module = await Test.createTestingModule({
         providers: [
           Guard,
@@ -241,7 +246,7 @@ describe('createWristbandAuthGuard', () => {
 
     beforeEach(async () => {
       const Guard = createWristbandAuthGuard();
-      
+
       const module = await Test.createTestingModule({
         providers: [
           Guard,
@@ -334,7 +339,7 @@ describe('createWristbandAuthGuard', () => {
 
     it('should allow different guards to use different configs', async () => {
       const config1 = { authStrategies: ['JWT'] };
-      const config2 = { 
+      const config2 = {
         authStrategies: ['SESSION'],
         sessionConfig: {
           sessionOptions: { secrets: 'test-secret' },

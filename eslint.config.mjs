@@ -1,37 +1,35 @@
 import globals from 'globals';
-import pluginJs from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
 import pluginPrettier from 'eslint-plugin-prettier';
+import pluginImport from 'eslint-plugin-import';
+import pluginN from 'eslint-plugin-n';
 
-export default [
+export default tseslint.config(
   {
-    files: ['src/**/*.{ts}'],
-    ignores: ['src/**/*.spec.ts'],
+    ignores: ['node_modules', 'dist', 'coverage', '*.config.js'],
   },
-  { languageOptions: { globals: globals.browser } },
-  pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
+  pluginN.configs['flat/recommended'],
   prettier,
-  { ignores: ['node_modules', 'dist', 'coverage', 'test/**', '*.config.js'] },
   {
+    files: ['src/**/*.ts', 'test/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
     plugins: {
       prettier: pluginPrettier,
+      import: pluginImport,
     },
     rules: {
-      'arrow-body-style': ['error', 'always'],
       'consistent-return': 'warn',
-      'func-names': 'off',
       'no-console': 'off',
-      'no-empty-function': 'off',
       'no-fallthrough': 'off',
       'no-process-exit': 'off',
-      'no-unused-vars': 'warn',
-      'object-curly-newline': 'off',
-      'object-shorthand': 'off',
-      'prefer-destructuring': 'off',
+      'n/no-missing-import': 'off',
+      'n/no-process-exit': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'prettier/prettier': 'error',
-      strict: ['error', 'global'],
       'max-len': [
         'error',
         {
@@ -42,11 +40,22 @@ export default [
           ignoreTemplateLiterals: true,
         },
       ],
-      '@typescript-eslint/dot-notation': 'off',
-      'import/prefer-default-export': 'off',
-      'lines-between-class-members': 'off',
-      '@typescript-eslint/lines-between-class-members': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
+      'import/no-extraneous-dependencies': [
+        'error',
+        { devDependencies: ['test/**', '**/*.spec.ts'] },
+      ],
     },
   },
-];
+  {
+    files: ['test/**/*.ts', '**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      'n/no-missing-import': 'off',
+      'n/no-unpublished-import': 'off',
+    },
+  }
+);

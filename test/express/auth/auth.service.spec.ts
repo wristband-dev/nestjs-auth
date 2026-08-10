@@ -1,5 +1,5 @@
 import type { WristbandAuth } from '@wristband/express-auth';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 import type { AuthConfig } from '../../../src';
 import { WristbandExpressAuthService } from '../../../src';

@@ -1,7 +1,7 @@
 /**
  * Session Module
  *
- * Importing this automatically augments Express.Request with the `session` property
+ * Importing this automatically augments Express. Request with the `session` property
  * because the middleware imports from @wristband/express-auth/session
  */
 export { WristbandExpressSessionMiddleware } from './session.middleware';

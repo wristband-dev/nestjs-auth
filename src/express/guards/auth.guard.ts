@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 import { WristbandExpressAuthService } from '../auth/auth.service';
 import type { AuthGuardConfig } from '../types/auth-guard.types';
@@ -93,6 +93,7 @@ export function createWristbandAuthGuard(
 ): Type<CanActivate> {
   @Injectable()
   class WristbandAuthGuardMixin implements CanActivate {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private readonly authMiddleware: any;
     private readonly authService: WristbandExpressAuthService;
     private readonly configService: ConfigService;
@@ -160,6 +161,7 @@ export function createWristbandAuthGuard(
       const response = context.switchToHttp().getResponse<Response>();
 
       return new Promise<boolean>((resolve, reject) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.authMiddleware(request, response, (err?: any) => {
           if (err) {
             // Map Express middleware errors to NestJS exceptions

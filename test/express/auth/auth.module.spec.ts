@@ -23,15 +23,24 @@ describe('WristbandExpressAuthModule', () => {
 
     module = await Test.createTestingModule({
       imports: [
-        WristbandExpressAuthModule.forRootAsync({
-          useFactory: () => config,
-        }, 'firstWristband'),
-        WristbandExpressAuthModule.forRootAsync({
-          useFactory: () => ({ ...config, clientId: 'different-client-id' }),
-        }, 'secondWristband'),
-        WristbandExpressAuthModule.forRootAsync({
-          useFactory: () => ({ ...config, clientId: 'third-client-id' }),
-        }, 'thirdWristband'),
+        WristbandExpressAuthModule.forRootAsync(
+          {
+            useFactory: () => config,
+          },
+          'firstWristband'
+        ),
+        WristbandExpressAuthModule.forRootAsync(
+          {
+            useFactory: () => ({ ...config, clientId: 'different-client-id' }),
+          },
+          'secondWristband'
+        ),
+        WristbandExpressAuthModule.forRootAsync(
+          {
+            useFactory: () => ({ ...config, clientId: 'third-client-id' }),
+          },
+          'thirdWristband'
+        ),
       ],
     }).compile();
 
@@ -77,7 +86,7 @@ describe('WristbandExpressAuthModule', () => {
 
     const defaultService = defaultModule.get<WristbandExpressAuthService>(DEFAULT_AUTH_TOKEN);
     expect(defaultService).toBeDefined();
-    
+
     await defaultModule.close();
   });
 });

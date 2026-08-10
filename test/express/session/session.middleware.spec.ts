@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import type { SessionOptions } from '@wristband/express-auth';
 import { createWristbandSession } from '@wristband/express-auth/session';
 
@@ -67,6 +67,7 @@ describe('WristbandExpressSessionMiddleware', () => {
 
   it('should pass through errors from the session middleware', async () => {
     const mockError = new Error('Session error');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     mockSessionMiddleware.mockImplementation((req, res, next) => {
       throw mockError;
     });
@@ -90,7 +91,7 @@ describe('WristbandExpressSessionMiddleware', () => {
 
     // createWristbandSession should only be called once (in constructor)
     expect(createWristbandSession).toHaveBeenCalledTimes(1);
-    
+
     // But the middleware function should be called each time
     expect(mockSessionMiddleware).toHaveBeenCalledTimes(3);
   });
