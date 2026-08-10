@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { createWristbandAuth as createExpressWristbandAuth } from '@wristband/express-auth';
 import type {
   AuthConfig,

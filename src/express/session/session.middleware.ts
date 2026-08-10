@@ -1,5 +1,5 @@
 import { Injectable, NestMiddleware, Inject } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import type { SessionOptions } from '@wristband/express-auth';
 import { createWristbandSession } from '@wristband/express-auth/session';
 
@@ -56,6 +56,7 @@ import { SESSION_OPTIONS_TOKEN } from '../constants';
  */
 @Injectable()
 export class WristbandExpressSessionMiddleware implements NestMiddleware {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private sessionMiddleware: any;
 
   /**
