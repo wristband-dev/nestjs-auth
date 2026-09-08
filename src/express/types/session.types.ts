@@ -1,4 +1,4 @@
-import type { SessionOptions } from '@wristband/express-auth';
+import type { SessionOptions } from '@wristband/typescript-session';
 
 export interface WristbandSessionAsyncOptions {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

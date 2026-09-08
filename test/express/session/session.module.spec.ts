@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import type { SessionOptions } from '@wristband/express-auth';
+import type { SessionOptions } from '@wristband/typescript-session';
 
 import { WristbandExpressSessionModule } from '../../../src/express/session/session.module';
 import { WristbandExpressSessionMiddleware } from '../../../src/express/session/session.middleware';

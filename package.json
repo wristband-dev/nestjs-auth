@@ -95,7 +95,9 @@
     "test:coverage": "jest --coverage --no-cache --runInBand"
   },
   "dependencies": {
-    "@wristband/express-auth": "^6.2.0"
+    "@wristband/typescript-auth": "file:../typescript-auth",
+    "@wristband/typescript-jwt": "^0.3.0",
+    "@wristband/typescript-session": "^0.2.0"
   },
   "peerDependencies": {
     "@nestjs/common": ">=10.0.0",

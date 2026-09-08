@@ -1,7 +1,17 @@
+import type { JWTPayload } from '@wristband/typescript-jwt';
+
 /**
- * JWT Type Augmentation
+ * JWT type augmentation for Express.
  *
- * Importing this automatically augments Express. Request with the `auth` property
- * Only needed for import if someone uses AuthGuard with JWT strategy.
+ * Import this module to enable TypeScript support for `req.auth` when using JWT authentication strategy.
  */
-import '@wristband/express-auth/jwt';
+declare module 'express-serve-static-core' {
+  interface Request {
+    /**
+     * Decoded JWT payload and bearer token.
+     */
+    auth: JWTPayload & { jwt?: string };
+  }
+}
+
+export {};

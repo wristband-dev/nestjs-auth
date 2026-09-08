@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
+import { WristbandError } from '@wristband/typescript-auth';
 
 import { createWristbandAuthGuard } from '../../../src/express/guards/auth.guard';
 import { WristbandExpressAuthService } from '../../../src/express/auth/auth.service';
@@ -16,21 +17,20 @@ import { DEFAULT_AUTH_TOKEN } from '../../../src/express/constants';
 describe('createWristbandAuthGuard', () => {
   let mockAuthService: jest.Mocked<WristbandExpressAuthService>;
   let mockConfigService: jest.Mocked<ConfigService>;
-  let mockAuthMiddleware: jest.Mock;
+  let mockAuthenticate: jest.Mock;
   let guardConfig: AuthGuardConfig;
 
   beforeEach(() => {
-    // Setup mock auth middleware
-    mockAuthMiddleware = jest.fn((req, res, next) => next());
+    mockAuthenticate = jest
+      .fn()
+      .mockResolvedValue({ authenticated: true, usedStrategy: 'JWT', jwtPayload: {}, jwt: 't' });
 
-    // Setup mock auth service
     mockAuthService = {
       wristbandAuth: {
-        createAuthMiddleware: jest.fn().mockReturnValue(mockAuthMiddleware),
+        authenticate: mockAuthenticate,
       },
     } as any;
 
-    // Setup guard config
     guardConfig = {
       authStrategies: ['JWT', 'SESSION'],
       sessionConfig: {
@@ -42,7 +42,6 @@ describe('createWristbandAuthGuard', () => {
       },
     };
 
-    // Setup mock config service
     mockConfigService = {
       get: jest.fn().mockReturnValue(guardConfig),
     } as any;
@@ -221,21 +220,6 @@ describe('createWristbandAuthGuard', () => {
       const guard = module.get(Guard);
       expect(guard).toBeDefined();
     });
-
-    it('should call createAuthMiddleware with guard config', async () => {
-      const Guard = createWristbandAuthGuard();
-
-      const module = await Test.createTestingModule({
-        providers: [
-          Guard,
-          { provide: DEFAULT_AUTH_TOKEN, useValue: mockAuthService },
-          { provide: ConfigService, useValue: mockConfigService },
-        ],
-      }).compile();
-
-      module.get(Guard);
-      expect(mockAuthService.wristbandAuth.createAuthMiddleware).toHaveBeenCalledWith(guardConfig);
-    });
   });
 
   describe('canActivate', () => {
@@ -257,7 +241,7 @@ describe('createWristbandAuthGuard', () => {
 
       guard = module.get(Guard);
 
-      mockRequest = {};
+      mockRequest = { session: { save: jest.fn() } } as any;
       mockResponse = {};
       mockExecutionContext = {
         switchToHttp: jest.fn().mockReturnValue({
@@ -267,65 +251,50 @@ describe('createWristbandAuthGuard', () => {
       } as any;
     });
 
-    it('should return true when auth middleware succeeds', async () => {
-      mockAuthMiddleware.mockImplementation((req, res, next) => next());
-
+    it('should return true when authenticate succeeds', async () => {
       const result = await guard.canActivate(mockExecutionContext);
       expect(result).toBe(true);
-      expect(mockAuthMiddleware).toHaveBeenCalledWith(mockRequest, mockResponse, expect.any(Function));
+      expect(mockAuthenticate).toHaveBeenCalledWith(mockRequest, guardConfig, mockRequest.session);
     });
 
-    it('should throw UnauthorizedException for 401 errors', async () => {
-      const error = { status: 401, message: 'Unauthorized access' };
-      mockAuthMiddleware.mockImplementation((req, res, next) => next(error));
+    it('should attach req.auth on JWT success', async () => {
+      mockAuthenticate.mockResolvedValue({
+        authenticated: true,
+        usedStrategy: 'JWT',
+        jwtPayload: { sub: 'user-1' },
+        jwt: 'token',
+      });
 
+      await guard.canActivate(mockExecutionContext);
+      expect((mockRequest as any).auth).toEqual({ sub: 'user-1', jwt: 'token' });
+    });
+
+    it('should throw UnauthorizedException for not_authenticated', async () => {
+      mockAuthenticate.mockResolvedValue({ authenticated: false, reason: 'not_authenticated' });
       await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(UnauthorizedException);
-      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow('Unauthorized access');
-    });
-
-    it('should throw ForbiddenException for 403 errors', async () => {
-      const error = { status: 403, message: 'Forbidden resource' };
-      mockAuthMiddleware.mockImplementation((req, res, next) => next(error));
-
-      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(ForbiddenException);
-      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow('Forbidden resource');
-    });
-
-    it('should throw InternalServerErrorException for 500 errors', async () => {
-      const error = { status: 500, message: 'Server error' };
-      mockAuthMiddleware.mockImplementation((req, res, next) => next(error));
-
-      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(InternalServerErrorException);
-      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow('Server error');
-    });
-
-    it('should throw InternalServerErrorException for unknown errors', async () => {
-      const error = { message: 'Unknown error' };
-      mockAuthMiddleware.mockImplementation((req, res, next) => next(error));
-
-      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(InternalServerErrorException);
-      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow('Unknown error');
-    });
-
-    it('should use statusCode if status is not present', async () => {
-      const error = { statusCode: 401, message: 'Unauthorized' };
-      mockAuthMiddleware.mockImplementation((req, res, next) => next(error));
-
-      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(UnauthorizedException);
-    });
-
-    it('should use default error messages when not provided', async () => {
-      const error401 = { status: 401 };
-      mockAuthMiddleware.mockImplementation((req, res, next) => next(error401));
       await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow('Unauthorized');
+    });
 
-      const error403 = { status: 403 };
-      mockAuthMiddleware.mockImplementation((req, res, next) => next(error403));
+    it('should throw UnauthorizedException for token_refresh_failed', async () => {
+      mockAuthenticate.mockResolvedValue({ authenticated: false, reason: 'token_refresh_failed' });
+      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw ForbiddenException for csrf_failed', async () => {
+      mockAuthenticate.mockResolvedValue({ authenticated: false, reason: 'csrf_failed' });
+      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(ForbiddenException);
       await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow('Forbidden');
+    });
 
-      const error500 = { status: 500 };
-      mockAuthMiddleware.mockImplementation((req, res, next) => next(error500));
+    it('should throw InternalServerErrorException for unexpected_error', async () => {
+      mockAuthenticate.mockResolvedValue({ authenticated: false, reason: 'unexpected_error' });
+      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(InternalServerErrorException);
       await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow('Internal server error');
+    });
+
+    it('should throw InternalServerErrorException for session_not_configured', async () => {
+      mockAuthenticate.mockRejectedValue(new WristbandError('session_not_configured', 'missing session'));
+      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(InternalServerErrorException);
     });
   });
 
@@ -369,8 +338,6 @@ describe('createWristbandAuthGuard', () => {
 
       expect(guard1).toBeDefined();
       expect(guard2).toBeDefined();
-      expect(mockAuthService.wristbandAuth.createAuthMiddleware).toHaveBeenCalledWith(config1);
-      expect(mockAuthService.wristbandAuth.createAuthMiddleware).toHaveBeenCalledWith(config2);
     });
   });
 });
