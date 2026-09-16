@@ -1,4 +1,4 @@
-// express-auth SDK re-exports
+// typescript-auth / typescript-session re-exports
 export type {
   AuthConfig,
   AuthStrategy,
@@ -7,17 +7,20 @@ export type {
   CallbackResultType,
   LoginConfig,
   LogoutConfig,
+  TokenData,
+  UserInfo,
+  UserInfoRole,
+} from '@wristband/typescript-auth';
+export { WristbandError } from '@wristband/typescript-auth';
+
+export type {
   SameSiteOption,
   Session,
   SessionData,
   SessionOptions,
   SessionResponse,
-  TokenData,
   TokenResponse,
-  UserInfo,
-  UserInfoRole,
-} from '@wristband/express-auth';
-export { WristbandError } from '@wristband/express-auth';
+} from '@wristband/typescript-session';
 
 // nestjs-auth SDK exports
 export { WristbandExpressAuthModule, WristbandExpressAuthService, createWristbandAuthGuard } from './express';

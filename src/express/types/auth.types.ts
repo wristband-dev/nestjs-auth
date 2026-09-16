@@ -1,4 +1,4 @@
-import { AuthConfig } from '@wristband/express-auth';
+import { AuthConfig } from '@wristband/typescript-auth';
 
 export interface WristbandAuthAsyncOptions {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

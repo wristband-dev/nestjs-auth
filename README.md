@@ -1064,12 +1064,12 @@ WristbandExpressAuthModule.forRootAsync(
 
 ## Auth API
 
-This SDK uses the [Wristband express-auth SDK](https://github.com/wristband-dev/express-auth) internally for all Express support. The following auth methods are available via the `WristbandExpressAuthService`. For detailed documentation on parameters, return types, and behavior, refer to the express-auth Auth API documentation:
+This SDK uses the framework-agnostic [Wristband typescript-auth SDK](https://github.com/wristband-dev/typescript-auth) internally for all authentication logic. The following auth methods are available via the `WristbandExpressAuthService`. For detailed documentation on parameters, return types, and behavior, refer to the typescript-auth Auth API documentation:
 
-- <ins>[login()](https://github.com/wristband-dev/express-auth?tab=readme-ov-file#login)</ins>
-- <ins>[callback()](https://github.com/wristband-dev/express-auth?tab=readme-ov-file#callback)</ins>
-- <ins>[logout()](https://github.com/wristband-dev/express-auth?tab=readme-ov-file#logout)</ins>
-- <ins>[refreshTokenIfExpired()](https://github.com/wristband-dev/express-auth?tab=readme-ov-file#refreshtokenifexpired)</ins>
+- <ins>[login()](https://github.com/wristband-dev/typescript-auth?tab=readme-ov-file#login)</ins>
+- <ins>[callback()](https://github.com/wristband-dev/typescript-auth?tab=readme-ov-file#callback)</ins>
+- <ins>[logout()](https://github.com/wristband-dev/typescript-auth?tab=readme-ov-file#logout)</ins>
+- <ins>[refreshTokenIfExpired()](https://github.com/wristband-dev/typescript-auth?tab=readme-ov-file#refreshtokenifexpired)</ins>
 
 <br>
 
@@ -1083,7 +1083,7 @@ The SDK provides encrypted cookie-based session management via `WristbandExpress
 
 > **📚 Learn More About Sessions**
 >
-> This section covers NestJS-specific session setup and usage. For detailed information on session configuration options, session object methods, and advanced patterns like key rotation, see the [express-auth Session Management documentation](https://github.com/wristband-dev/express-auth#session-management).
+> This section covers NestJS-specific session setup and usage. For detailed information on session configuration options, session object methods, and advanced patterns like key rotation, see the [@wristband/typescript-session documentation](https://github.com/wristband-dev/typescript-session).
 
 ### WristbandExpressSessionModule
 
@@ -1341,7 +1341,7 @@ The SDK provides an authentication guard via the `createWristbandAuthGuard()` fa
 
 > **📚 Learn More About Authentication**
 >
-> This section covers NestJS-specific guard setup and usage. For detailed information on authentication strategy behavior, token refresh logic, and CSRF validation implementation, see the [express-auth Authentication Middleware documentation](https://github.com/wristband-dev/express-auth#authentication-middleware).
+> This section covers NestJS-specific guard setup and usage. For detailed information on authentication strategy behavior, token refresh logic, and CSRF validation implementation, see the [typescript-auth authenticate() documentation](https://github.com/wristband-dev/typescript-auth?tab=readme-ov-file#authenticate).
 
 ### createWristbandAuthGuard()
 
@@ -1633,17 +1633,17 @@ if (response.status === 401 || response.status === 403) {
 
 This SDK builds upon and integrates with other Wristband SDKs to provide a complete authentication solution:
 
-**[@wristband/express-auth](https://github.com/wristband-dev/express-auth)**
+**[@wristband/typescript-auth](https://github.com/wristband-dev/typescript-auth)**
 
-This SDK wraps the Wristband Express Auth SDK to provide NestJS-specific patterns and integrations. The express-auth SDK provides all core authentication functionality including login workflows, callback handling, logout flows, token refresh, session management (via [@wristband/typescript-session](https://github.com/wristband-dev/typescript-session)), and JWT validation (via [@wristband/typescript-jwt](https://github.com/wristband-dev/typescript-jwt)). This NestJS SDK adapts those capabilities for use with NestJS modules, guards, and dependency injection. Refer to the express-auth repository for detailed documentation on auth configuration options, API methods, and authentication workflows.
+This SDK wraps the framework-agnostic Wristband TypeScript Auth SDK to provide NestJS-specific patterns and integrations. The typescript-auth SDK provides all core authentication functionality including login workflows, callback handling, logout flows, token refresh, and SESSION/JWT request authentication, building on [@wristband/typescript-session](https://github.com/wristband-dev/typescript-session) and [@wristband/typescript-jwt](https://github.com/wristband-dev/typescript-jwt). This NestJS SDK adapts those capabilities for use with NestJS modules, guards, and dependency injection. Refer to the typescript-auth repository for detailed documentation on auth configuration options, API methods, and authentication workflows.
 
 **[@wristband/typescript-session](https://github.com/wristband-dev/typescript-session)**
 
-Included as a dependency via express-auth, this SDK provides encrypted cookie-based session management. It provides the underlying session infrastructure including encryption, cookie handling, and session lifecycle management. Refer to that GitHub repository for more information on session configuration options and advanced usage.
+A direct dependency of this SDK, it provides encrypted cookie-based session management. It provides the underlying session infrastructure including encryption, cookie handling, and session lifecycle management. Refer to that GitHub repository for more information on session configuration options and advanced usage.
 
 **[@wristband/typescript-jwt](https://github.com/wristband-dev/typescript-jwt)**
 
-Included as a dependency via express-auth, this SDK handles JWT validation when using the `JWT` authentication strategy in guards. It handles JWT signature verification, token parsing, and JWKS key management. The JWT SDK functions are also re-exported from this package, allowing you to use them directly for custom JWT validation scenarios beyond the built-in guard strategy. Refer to that GitHub repository for more information on JWT validation configuration and options.
+A direct dependency of this SDK, it handles JWT validation when using the `JWT` authentication strategy in guards. It handles JWT signature verification, token parsing, and JWKS key management. The JWT SDK functions are also re-exported from this package, allowing you to use them directly for custom JWT validation scenarios beyond the built-in guard strategy. Refer to that GitHub repository for more information on JWT validation configuration and options.
 
 **[@wristband/react-client-auth](https://github.com/wristband-dev/react-client-auth)**
 

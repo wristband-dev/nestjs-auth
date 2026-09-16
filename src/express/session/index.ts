@@ -1,8 +1,8 @@
 /**
  * Session Module
  *
- * Importing this automatically augments Express. Request with the `session` property
- * because the middleware imports from @wristband/express-auth/session
+ * Importing this automatically augments Express.Request with the `session` property
+ * because the middleware loads the local session helper.
  */
 export { WristbandExpressSessionMiddleware } from './session.middleware';
 export { WristbandExpressSessionModule } from './session.module';
@@ -15,4 +15,4 @@ export { WristbandExpressSessionModule } from './session.module';
  *
  * Only import these if you're using the Session Module/Middleware.
  */
-export { SessionError, SessionErrorCode } from '@wristband/express-auth';
+export { SessionError, SessionErrorCode } from '@wristband/typescript-session';
