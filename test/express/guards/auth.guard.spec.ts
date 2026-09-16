@@ -295,6 +295,13 @@ describe('createWristbandAuthGuard', () => {
     it('should throw InternalServerErrorException for session_not_configured', async () => {
       mockAuthenticate.mockRejectedValue(new WristbandError('session_not_configured', 'missing session'));
       await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(InternalServerErrorException);
+      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow('missing session');
+    });
+
+    it('should throw InternalServerErrorException with the message of unexpected errors', async () => {
+      mockAuthenticate.mockRejectedValue(new Error('boom'));
+      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(InternalServerErrorException);
+      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow('boom');
     });
   });
 

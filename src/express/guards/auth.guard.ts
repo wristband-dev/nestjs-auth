@@ -11,7 +11,6 @@ import {
 import { Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
-import { WristbandError } from '@wristband/typescript-auth';
 
 import { WristbandExpressAuthService } from '../auth/auth.service';
 import type { AuthGuardConfig } from '../types/auth-guard.types';
@@ -115,11 +114,10 @@ export function createWristbandAuthGuard(
           throw error;
         }
 
-        if (error instanceof WristbandError) {
-          throw new InternalServerErrorException();
-        }
-
-        throw new InternalServerErrorException();
+        // Configuration errors from the core SDK (e.g. session_not_configured) surface with their message so
+        // that misconfigurations are diagnosable, matching the behavior of previous versions of this guard.
+        const message = error instanceof Error && error.message ? error.message : 'Internal server error';
+        throw new InternalServerErrorException(message);
       }
     }
   }
